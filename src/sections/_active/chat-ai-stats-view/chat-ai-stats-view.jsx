@@ -1,3 +1,5 @@
+import { useCallback, useState } from 'react';
+
 import Box from '@mui/material/Box';
 import Card from '@mui/material/Card';
 import CardHeader from '@mui/material/CardHeader';
@@ -7,15 +9,13 @@ import Stack from '@mui/material/Stack';
 import Typography from '@mui/material/Typography';
 import { useTheme } from '@mui/material/styles';
 
-import { CONFIG } from 'src/config-global';
 import { paths } from 'src/routes/paths';
 
-import { Chart, ChartLegends, useChart } from 'src/components/chart';
+import { Chart, ChartLegends, ChartSelect, useChart } from 'src/components/chart';
 import { CustomBreadcrumbs } from 'src/components/custom-breadcrumbs';
 import { Iconify } from 'src/components/iconify';
 import { Label } from 'src/components/label';
-import { SvgColor } from 'src/components/svg-color';
-import { stylesMode, varAlpha } from 'src/theme/styles';
+import { varAlpha } from 'src/theme/styles';
 import { fNumber, fPercent } from 'src/utils/format-number';
 
 import { CHAT_AI_STATS } from './mock/stats';
@@ -36,104 +36,74 @@ function KpiCard({ item }) {
   const down = item.percent < 0;
   const palette = theme.vars.palette[color];
 
-  const chartOptions = useChart({
-    chart: { sparkline: { enabled: true } },
-    colors: [palette.main],
-    fill: {
-      type: 'gradient',
-      gradient: {
-        opacityFrom: 0.64,
-        opacityTo: 0.08,
-        stops: [0, 100],
-      },
-    },
-    stroke: { width: 2.5, curve: 'smooth' },
-    tooltip: {
-      y: { formatter: (value) => fNumber(value), title: { formatter: () => '' } },
-    },
-  });
-
   return (
     <Card
       sx={{
-        p: 3,
-        pb: 1,
-        overflow: 'hidden',
+        py: 2,
+        pl: 2.5,
+        pr: 2,
+        minHeight: 88,
         position: 'relative',
-        bgcolor: varAlpha(palette.mainChannel, 0.08),
-        boxShadow: 'none',
-        border: `1px solid ${varAlpha(palette.mainChannel, 0.16)}`,
+        overflow: 'hidden',
       }}
     >
-      <SvgColor
-        src={`${CONFIG.site.basePath}/assets/background/shape-square.svg`}
+      <Box sx={{ position: 'relative', zIndex: 1, pr: 6 }}>
+        <Box sx={{ typography: 'h4' }}>{formatKpiValue(item)}</Box>
+        <Typography noWrap variant="body2" component="div" sx={{ color: 'text.secondary' }}>
+          {item.title}
+        </Typography>
+        <Typography variant="caption" sx={{ color: down ? 'error.main' : 'success.main' }}>
+          {item.percent > 0 ? '+' : ''}
+          {fPercent(item.percent)} vs last period
+        </Typography>
+      </Box>
+
+      <Box
         sx={{
-          top: -28,
-          right: -20,
-          width: 180,
-          height: 180,
-          opacity: 0.16,
+          top: 16,
+          right: 16,
+          zIndex: 1,
+          width: 32,
+          height: 32,
+          display: 'flex',
+          borderRadius: 1,
           position: 'absolute',
-          color: `${color}.main`,
+          alignItems: 'center',
+          justifyContent: 'center',
+          color: 'common.white',
+          background: `linear-gradient(135deg, ${palette.main} 0%, ${palette.dark} 100%)`,
+        }}
+      >
+        <Iconify icon={item.icon} width={18} />
+      </Box>
+
+      <Box
+        sx={{
+          top: -48,
+          width: 132,
+          zIndex: 0,
+          height: 132,
+          right: -88,
+          opacity: 0.12,
+          borderRadius: 3,
+          position: 'absolute',
+          transform: 'rotate(40deg)',
+          background: `linear-gradient(to right, ${palette.main} 0%, ${varAlpha(palette.mainChannel, 0)} 100%)`,
         }}
       />
-
-      <Stack direction="row" alignItems="flex-start" justifyContent="space-between" sx={{ mb: 2.5 }}>
-        <Box
-          sx={{
-            width: 48,
-            height: 48,
-            borderRadius: 1.5,
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'center',
-            color: `${color}.dark`,
-            bgcolor: varAlpha(palette.mainChannel, 0.16),
-            [stylesMode.dark]: { color: `${color}.light` },
-          }}
-        >
-          <Iconify icon={item.icon} width={26} />
-        </Box>
-
-        <Stack
-          direction="row"
-          spacing={0.5}
-          alignItems="center"
-          sx={{
-            px: 1,
-            py: 0.5,
-            borderRadius: 1,
-            typography: 'subtitle2',
-            color: down ? 'error.main' : 'success.main',
-            bgcolor: varAlpha(theme.vars.palette[down ? 'error' : 'success'].mainChannel, 0.16),
-          }}
-        >
-          <Iconify width={16} icon={down ? 'eva:trending-down-fill' : 'eva:trending-up-fill'} />
-          {item.percent > 0 ? '+' : ''}
-          {fPercent(item.percent)}
-        </Stack>
-      </Stack>
-
-      <Typography variant="subtitle2" sx={{ color: 'text.secondary' }}>
-        {item.title}
-      </Typography>
-
-      <Typography variant="h3" sx={{ mt: 0.5 }}>
-        {formatKpiValue(item)}
-      </Typography>
-
-      <Chart type="area" series={[{ data: item.sparkline }]} options={chartOptions} height={64} sx={{ mx: -1 }} />
     </Card>
   );
 }
 
 function UsageTrendCard({ trend }) {
   const theme = useTheme();
+  const [selectedPeriod, setSelectedPeriod] = useState('1 month');
+  const currentSeries = trend.find((item) => item.name === selectedPeriod) || trend[0];
 
   const chartOptions = useChart({
     colors: [theme.palette.primary.main],
     stroke: { width: 0 },
-    xaxis: { categories: trend.categories },
+    xaxis: { categories: currentSeries.categories },
     tooltip: {
       y: {
         formatter: (value) => `${fNumber(value)} conversations`,
@@ -143,10 +113,18 @@ function UsageTrendCard({ trend }) {
     plotOptions: { bar: { columnWidth: '42%', borderRadius: 4 } },
   });
 
+  const handleChangePeriod = useCallback((newValue) => {
+    setSelectedPeriod(newValue);
+  }, []);
+
   return (
     <Card>
-      <CardHeader title="AI Usage Trend" subheader="Daily conversation volume" />
-      <Chart type="bar" series={[{ name: 'Conversations', data: trend.series }]} options={chartOptions} height={320} sx={{ px: 1, pb: 2 }} />
+      <CardHeader
+        title="AI Usage Trend"
+        subheader="Conversation volume"
+        action={<ChartSelect options={trend.map((item) => item.name)} value={selectedPeriod} onChange={handleChangePeriod} />}
+      />
+      <Chart type="bar" series={[{ name: 'Conversations', data: currentSeries.data }]} options={chartOptions} height={320} sx={{ px: 1, pb: 2 }} />
     </Card>
   );
 }
@@ -243,7 +221,7 @@ function QualityCard({ title, value, helper, progress, color = 'primary' }) {
         variant="determinate"
         value={progress}
         color={color}
-        sx={{ height: 10, borderRadius: 1, bgcolor: 'background.neutral' }}
+        sx={{ height: 7, borderRadius: 1, bgcolor: 'background.neutral' }}
       />
 
       <Typography variant="body2" sx={{ mt: 2, color: 'text.secondary' }}>
@@ -270,7 +248,7 @@ export function ChatAiStatsView() {
         sx={{
           display: 'grid',
           gap: 3,
-          gridTemplateColumns: { xs: 'repeat(1, 1fr)', sm: 'repeat(2, 1fr)', lg: 'repeat(4, 1fr)' },
+          gridTemplateColumns: { xs: 'repeat(1, 1fr)', sm: 'repeat(2, 1fr)' },
           mb: 3,
         }}
       >

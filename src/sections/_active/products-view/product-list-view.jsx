@@ -1,3 +1,4 @@
+import PropTypes from 'prop-types';
 import { useCallback, useState } from 'react';
 
 import Box from '@mui/material/Box';
@@ -29,7 +30,9 @@ import { DEFAULT_FILTERS, FILTER_FIELDS, STATUS_FILTER_FIELD, TABLE_HEAD, TABLE_
 import { ProductTableRow } from './product-table-row';
 import { ProductViewDialog } from './product-view-dialog';
 
-export function ProductListView() {
+export function ProductListView({ embedded = false, sellerId }) {
+  const transformFilters = useCallback((params) => (sellerId ? { ...params, sellerId } : params), [sellerId]);
+
   const {
     filters,
     currentPage,
@@ -54,6 +57,7 @@ export function ProductListView() {
     filterFields: FILTER_FIELDS,
     defaultRowsPerPage: 10,
     debounceMs: 500,
+    transformFilters,
   });
 
   const formDialog = useBoolean();
@@ -141,20 +145,7 @@ export function ProductListView() {
     [meta]
   );
 
-  return (
-    <>
-      <Box sx={{ px: { xs: 2, md: 6 }, pb: 5, pt: 3, display: 'flex', flexDirection: 'column' }}>
-        <CustomBreadcrumbs
-          heading="Products"
-          links={[{ name: 'Dashboard', href: paths.adminDashboard.root }, { name: 'Products' }]}
-          action={
-            <Button variant="contained" color="primary" startIcon={<Iconify icon="mingcute:add-line" />} onClick={handleOpenCreate}>
-              New Product
-            </Button>
-          }
-          sx={{ mb: { xs: 3, md: 5 } }}
-        />
-
+  const table = (
         <Card>
           <StatusTabsFilterWrapper filterField={STATUS_FILTER_FIELD} value={filters.state.availability} onChange={handleFilterChange} getCount={getStatusCount} />
 
@@ -219,7 +210,27 @@ export function ProductListView() {
 
           <TablePaginationCustom page={currentPage} count={totalRecords} rowsPerPage={itemsPerPage} rowsPerPageOptions={[]} onPageChange={handlePageChange} />
         </Card>
-      </Box>
+  );
+
+  return (
+    <>
+      {embedded ? (
+        table
+      ) : (
+        <Box sx={{ px: { xs: 2, md: 5 }, pb: 5, pt: 3, display: 'flex', flexDirection: 'column' }}>
+          <CustomBreadcrumbs
+            heading="Products"
+            links={[{ name: 'Dashboard', href: paths.adminDashboard.root }, { name: 'Products' }]}
+            action={
+              <Button variant="contained" color="primary" startIcon={<Iconify icon="mingcute:add-line" />} onClick={handleOpenCreate}>
+                New Product
+              </Button>
+            }
+            sx={{ mb: { xs: 3, md: 5 } }}
+          />
+          {table}
+        </Box>
+      )}
 
       <ProductViewDialog product={currentProduct} open={viewDialog.value} onClose={handleCloseView} />
 
@@ -243,3 +254,8 @@ export function ProductListView() {
     </>
   );
 }
+
+ProductListView.propTypes = {
+  embedded: PropTypes.bool,
+  sellerId: PropTypes.string,
+};

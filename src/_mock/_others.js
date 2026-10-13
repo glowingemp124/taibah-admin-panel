@@ -11,12 +11,78 @@ export const _carouselsMembers = [...Array(6)].map((_, index) => ({
 
 // ----------------------------------------------------------------------
 
-export const _faqs = [...Array(8)].map((_, index) => ({
-  id: _mock.id(index),
-  value: `panel${index + 1}`,
-  heading: `Questions ${index + 1}`,
-  detail: _mock.description(index),
-}));
+export const _faqs = [
+  {
+    id: 'faq-001',
+    value: 'panel1',
+    heading: 'How do I track my Taibah order?',
+    detail:
+      'Open your account, go to Orders, and select the order number (for example NB-102401). You will see the current status, from placed through packed, shipped, and delivered. If the estimated window has passed, contact Support with the order ID.',
+  },
+  {
+    id: 'faq-002',
+    value: 'panel2',
+    heading: 'Which payment methods does Taibah accept?',
+    detail:
+      'You can pay by card at checkout or choose cash on delivery where it is offered. Card payments usually confirm immediately. If a card charge shows pending, wait a few minutes and refresh Transactions. Failed payments are not captured and you can retry checkout.',
+  },
+  {
+    id: 'faq-003',
+    value: 'panel3',
+    heading: 'How long does delivery take in Saudi Arabia?',
+    detail:
+      'Most orders in major cities arrive within 2–5 business days after the seller ships. Prayer items, modest fashion, and gift boxes are packed by the vendor, so timing can vary during Ramadan and Eid. You will receive updates as the order moves.',
+  },
+  {
+    id: 'faq-004',
+    value: 'panel4',
+    heading: 'Can I return an abaya, hijab, or janamaz?',
+    detail:
+      'Unused items in original packaging can be returned within 7 days of delivery. Damaged items, such as a torn abaya or a stained prayer mat, should be reported through Support with photos. Refunds go back to the original payment method, usually within 3–5 days after approval.',
+  },
+  {
+    id: 'faq-005',
+    value: 'panel5',
+    heading: 'How do I become a seller on Taibah?',
+    detail:
+      'Sign in, complete your profile, and enable seller access. You can then add products, photos, prices, and stock. Sellers such as modest fashion and Islamic gift stores manage listings from Products. Inactive accounts cannot publish until an admin reactivates them.',
+  },
+  {
+    id: 'faq-006',
+    value: 'panel6',
+    heading: 'Why was my product photo rejected?',
+    detail:
+      'Upload clear JPG or PNG images of the actual item. Dark, cropped, or watermarked files are often rejected. Use a plain background for hijabs, attar bottles, and home pieces so buyers can see fabric and color. After a valid upload, the listing can go live.',
+  },
+  {
+    id: 'faq-007',
+    value: 'panel7',
+    heading: 'Where can I find Eid and seasonal collections?',
+    detail:
+      'Home campaigns and Events highlight current collections, such as Eid modest fashion, attar gift boxes, and prayer sets. Open Events or the featured banners on the storefront. Stock is limited, so popular sizes and gift boxes may sell out before the campaign end date.',
+  },
+  {
+    id: 'faq-008',
+    value: 'panel8',
+    heading: 'I cannot sign in after resetting my password. What should I do?',
+    detail:
+      'Use only the newest reset link from email, then sign out on other devices. If the password still fails, wait a few minutes and try again. Do not reuse an old link. If it continues, open a Support ticket with the email on the account and we will help restore access.',
+  },
+  {
+    id: 'faq-009',
+    value: 'panel9',
+    heading: 'How do I contact Taibah Support?',
+    detail:
+      'Go to Support from Settings or send a ticket with your name, phone, subject, and message. Open tickets are answered by the admin team. Include your order number for delivery, payment, or refund questions so we can reply faster.',
+  },
+  {
+    id: 'faq-010',
+    value: 'panel10',
+    heading: 'Can one account be both a buyer and a seller?',
+    detail:
+      'Yes. A single Taibah account can shop as a buyer and list products as a seller. Buyer orders and seller products stay on the same profile, with separate tabs on the user details page. You can keep one role only if you do not need the other.',
+  },
+];
 
 // ----------------------------------------------------------------------
 

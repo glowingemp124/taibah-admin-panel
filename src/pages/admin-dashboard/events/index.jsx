@@ -1,7 +1,7 @@
 import { Helmet } from 'react-helmet-async';
 
 import { CONFIG } from 'src/config-global';
-import { BlankView } from 'src/sections/blank/view';
+import { EventListView } from 'src/sections/_active/events-view';
 
 // ----------------------------------------------------------------------
 
@@ -14,7 +14,7 @@ export default function Page() {
         <title> {metadata.title}</title>
       </Helmet>
 
-      <BlankView />
+      <EventListView />
     </>
   );
 }

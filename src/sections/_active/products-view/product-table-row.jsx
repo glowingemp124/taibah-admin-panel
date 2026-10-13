@@ -85,9 +85,9 @@ export function ProductTableRow({ row, serialNumber, onViewRow, onEditRow, onDel
 
       <TableCell>
         <Stack spacing={0.25}>
-          <Rating size="small" value={row.rating || 0} precision={0.1} readOnly />
+          <Rating size="small" value={Math.round(row.rating || 0)} readOnly />
           <Typography variant="caption" sx={{ color: 'text.secondary' }}>
-            {row.rating || 0} ({fShortenNumber(row.totalReviews || 0)} reviews)
+            {Math.round(row.rating || 0)}/5 ({fShortenNumber(row.totalReviews || 0)} reviews)
           </Typography>
         </Stack>
       </TableCell>

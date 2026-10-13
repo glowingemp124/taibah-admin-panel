@@ -156,10 +156,15 @@ function ArticleEditor({ article, onBack, onSave, onDelete }) {
   const hasCover = Boolean(article.coverUrl?.trim());
 
   return (
-    <Box sx={{ px: { xs: 2, md: 6 }, pb: 5, pt: 3, display: 'flex', flexDirection: 'column' }}>
+    <Box sx={{ px: { xs: 2, md: 5 }, pb: 5, pt: 3, display: 'flex', flexDirection: 'column' }}>
       <CustomBreadcrumbs
         heading={article.title}
-        links={[{ name: 'Dashboard', href: paths.adminDashboard.root }, { name: 'Help Center', href: paths.adminDashboard.content.helpCenter }, { name: article.title }]}
+        links={[
+          { name: 'Dashboard', href: paths.adminDashboard.root },
+          { name: 'Settings' },
+          { name: 'Help Center', href: paths.adminDashboard.settings.helpCenter },
+          { name: article.title },
+        ]}
         action={
           <Stack direction="row" spacing={1.5}>
             <Button color="inherit" variant="outlined" startIcon={<Iconify icon="eva:arrow-ios-back-fill" />} onClick={onBack}>
@@ -315,10 +320,10 @@ export function HelpCenterView() {
 
   return (
     <>
-      <Box sx={{ px: { xs: 2, md: 6 }, pb: 5, pt: 3, display: 'flex', flexDirection: 'column' }}>
+      <Box sx={{ px: { xs: 2, md: 5 }, pb: 5, pt: 3, display: 'flex', flexDirection: 'column' }}>
         <CustomBreadcrumbs
           heading="Help Center"
-          links={[{ name: 'Dashboard', href: paths.adminDashboard.root }, { name: 'Help Center' }]}
+          links={[{ name: 'Dashboard', href: paths.adminDashboard.root }, { name: 'Settings' }, { name: 'Help Center' }]}
           action={
             <Button variant="contained" color="primary" startIcon={<Iconify icon="mingcute:add-line" />} onClick={addDialog.onTrue}>
               Add article

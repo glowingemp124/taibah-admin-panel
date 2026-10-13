@@ -161,7 +161,7 @@ export function FaqsView() {
 
   return (
     <>
-      <Box sx={{ px: { xs: 2, md: 6 }, pb: 5, pt: 3, display: 'flex', flexDirection: 'column' }}>
+      <Box sx={{ px: { xs: 2, md: 5 }, pb: 5, pt: 3, display: 'flex', flexDirection: 'column' }}>
         <CustomBreadcrumbs
           heading="FAQs"
           links={[{ name: 'Dashboard', href: paths.adminDashboard.root }, { name: 'FAQs' }]}

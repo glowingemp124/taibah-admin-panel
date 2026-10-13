@@ -14,12 +14,7 @@ import { SUPPORT_STATUS_OPTIONS } from 'src/_mock';
 import { CustomBreadcrumbs } from 'src/components/custom-breadcrumbs';
 import { ConfirmDialog } from 'src/components/custom-dialog';
 import { Scrollbar } from 'src/components/scrollbar';
-import {
-  TableEmptyRows,
-  TableHeadCustom,
-  TableNoData,
-  TablePaginationCustom,
-} from 'src/components/table';
+import { TableEmptyRows, TableHeadCustom, TableNoData, TablePaginationCustom } from 'src/components/table';
 
 import { useDeleteWalletMutation, useGetWalletsQuery } from 'src/store/Reducer/wallets-api';
 import { applySorting } from 'src/utils/table-utils';
@@ -41,17 +36,14 @@ export const STATUS_OPTIONS = [
   { value: 'all', label: 'All', color: 'default' },
   ...SUPPORT_STATUS_OPTIONS.map((option) => ({
     ...option,
-    color:
-      (option.value === 'open' && 'success') ||
-      (option.value === 'closed' && 'warning') ||
-      'default',
+    color: (option.value === 'open' && 'success') || (option.value === 'closed' && 'warning') || 'default',
   })),
 ];
 
 const TABLE_HEAD = [
   { id: 'sr', label: 'Sr#', width: 80 },
   { id: 'name', label: 'Name' },
-  { id: "phone", label: "Phone" },
+  { id: 'phone', label: 'Phone' },
   { id: 'subject', label: 'Subject' },
   { id: 'message', label: 'Message' },
   { id: 'receivedAt', label: 'Received At', minWidth: 120 },
@@ -81,31 +73,16 @@ const DEFAULT_FILTERS = WALLET_FILTER_FIELDS.reduce((acc, field) => {
 // ----------------------------------------------------------------------
 
 // Memoized Table Content Component
-const TableContent = memo(({
-  isLoading,
-  isFetching,
-  sortedData,
-  currentPage,
-  itemsPerPage,
-  onDeleteRow,
-  table,
-}) => (
+const TableContent = memo(({ isLoading, isFetching, sortedData, currentPage, itemsPerPage, onDeleteRow, table }) => (
   <TableBody>
     {!isLoading &&
       !isFetching &&
       // sortedData.map((row, index) => (
       DUMMYDATA.map((row, index) => (
-        <SupportTableRow
-          key={row._id}
-          row={row}
-          serialNumber={currentPage * itemsPerPage + index + 1}
-          onDeleteRow={() => onDeleteRow(row._id, row.name)}
-        />
+        <SupportTableRow key={row._id} row={row} serialNumber={currentPage * itemsPerPage + index + 1} onDeleteRow={() => onDeleteRow(row._id, row.name)} />
       ))}
 
-    {(isLoading || isFetching) && (
-      <TableEmptyRows height={table.dense ? 56 : 76} emptyRows={itemsPerPage} />
-    )}
+    {(isLoading || isFetching) && <TableEmptyRows height={table.dense ? 56 : 76} emptyRows={itemsPerPage} />}
 
     {/* <TableNoData notFound={!isLoading && !isFetching && sortedData.length === 0} /> */}
 
@@ -146,63 +123,40 @@ export function SupportListView() {
     debounceMs: 500,
   });
 
-  const {
-    confirm,
-    itemToDelete,
-    isDeleting,
-    handleDeleteRow,
-    handleConfirmDelete,
-    handleCancelDelete,
-  } = useDeleteConfirmation(useDeleteWalletMutation, {
+  const { confirm, itemToDelete, isDeleting, handleDeleteRow, handleConfirmDelete, handleCancelDelete } = useDeleteConfirmation(useDeleteWalletMutation, {
     successMessage: 'Support deleted successfully!',
     errorMessage: 'Failed to delete wallet',
   });
 
   // Apply client-side sorting with memoization
-  const sortedData = useMemo(() => applySorting(dataList, table.orderBy, table.order),
-    [dataList, table.orderBy, table.order]
-  );
+  const sortedData = useMemo(() => applySorting(dataList, table.orderBy, table.order), [dataList, table.orderBy, table.order]);
 
   // Calculate status counts for tabs
-  const getStatusCount = useCallback((status) => {
-    const statusCounts = meta?.counts || {};
-    if (status === 'all') {
-      return Object.values(statusCounts).reduce((sum, count) => sum + count, 0);
-    }
-    return statusCounts[status] || 0;
-  },
+  const getStatusCount = useCallback(
+    (status) => {
+      const statusCounts = meta?.counts || {};
+      if (status === 'all') {
+        return Object.values(statusCounts).reduce((sum, count) => sum + count, 0);
+      }
+      return statusCounts[status] || 0;
+    },
     [meta]
   );
 
   // Get status filter field for tabs
-  const statusFilterField = useMemo(
-    () => WALLET_FILTER_FIELDS.find((f) => f.type === 'status'),
-    []
-  );
+  const statusFilterField = useMemo(() => WALLET_FILTER_FIELDS.find((f) => f.type === 'status'), []);
 
   // Get toolbar filter fields (exclude status as it's in tabs)
-  const toolbarFilterFields = useMemo(
-    () => WALLET_FILTER_FIELDS.filter((f) => f.type !== 'status'),
-    []
-  );
+  const toolbarFilterFields = useMemo(() => WALLET_FILTER_FIELDS.filter((f) => f.type !== 'status'), []);
 
   return (
     <>
-      <Box sx={{ px: { xs: 2, md: 6 }, pb: 5, pt: 3, display: 'flex', flexDirection: 'column' }}>
-        <CustomBreadcrumbs
-          heading="Support"
-          links={[{ name: 'Dashboard', href: paths.dashboard.root }, { name: 'Support' }]}
-          sx={{ mb: { xs: 3, md: 5 } }}
-        />
+      <Box sx={{ px: { xs: 2, md: 5 }, pb: 5, pt: 3, display: 'flex', flexDirection: 'column' }}>
+        <CustomBreadcrumbs heading="Support" links={[{ name: 'Dashboard', href: paths.dashboard.root }, { name: 'Support' }]} sx={{ mb: { xs: 3, md: 5 } }} />
 
         <Card>
           {/* Status Tabs Filter - Conditionally Rendered */}
-          <StatusTabsFilterWrapper
-            filterField={statusFilterField}
-            value={filters.state.status}
-            onChange={handleFilterChange}
-            getCount={getStatusCount}
-          />
+          <StatusTabsFilterWrapper filterField={statusFilterField} value={filters.state.status} onChange={handleFilterChange} getCount={getStatusCount} />
 
           {/* Flexible Toolbar with Debounced Search */}
           <FlexibleTableToolbar
@@ -242,13 +196,7 @@ export function SupportListView() {
 
             <Scrollbar>
               <Table size={table.dense ? 'small' : 'medium'} sx={{ minWidth: 960 }}>
-                <TableHeadCustom
-                  order={table.order}
-                  orderBy={table.orderBy}
-                  headLabel={TABLE_HEAD}
-                  rowCount={sortedData.length}
-                  onSort={table.onSort}
-                />
+                <TableHeadCustom order={table.order} orderBy={table.orderBy} headLabel={TABLE_HEAD} rowCount={sortedData.length} onSort={table.onSort} />
 
                 <TableContent
                   isLoading={isLoading}
@@ -281,18 +229,11 @@ export function SupportListView() {
         title="Delete Wallet"
         content={
           <>
-            Are you sure you want to delete wallet <strong>{itemToDelete?.name}</strong>? This
-            action cannot be undone.
+            Are you sure you want to delete wallet <strong>{itemToDelete?.name}</strong>? This action cannot be undone.
           </>
         }
         action={
-          <Button
-            variant="contained"
-            color="error"
-            onClick={handleConfirmDelete}
-            disabled={isDeleting}
-            startIcon={isDeleting && <CircularProgress size={20} color="inherit" />}
-          >
+          <Button variant="contained" color="error" onClick={handleConfirmDelete} disabled={isDeleting} startIcon={isDeleting && <CircularProgress size={20} color="inherit" />}>
             {isDeleting ? 'Deleting...' : 'Delete'}
           </Button>
         }

@@ -81,13 +81,13 @@ export const adminDashboardRoutes = [
         children: [
           { path: 'support', element: <SupportPage /> },
           { path: 'faqs', element: <FaqsPage /> },
+          { path: 'help-center', element: <HelpCenterPage /> },
+          { path: 'help-center/:id', element: <HelpCenterDetailsPage /> },
           { path: 'privacy', element: <PolicyPage /> },
           { path: 'terms', element: <TermsPage /> },
           { path: 'about', element: <AboutUsPage /> },
         ],
       },
-      { path: 'help-center', element: <HelpCenterPage /> },
-      { path: 'help-center/:id', element: <HelpCenterDetailsPage /> },
     ],
   },
 ];

@@ -264,6 +264,18 @@ export function useDataTable({
         [responseData?.meta]
     );
 
+    const isFilterValueActive = useCallback((value, defaultValue, field) => {
+        if (value === defaultValue || value === '' || value === null || value === undefined) {
+            return false;
+        }
+
+        if (field?.type === FILTER_FIELD_TYPES.DATE_RANGE || isDateRangeObject(value) || isDateRangeObject(defaultValue)) {
+            return Boolean(value?.startDate || value?.endDate);
+        }
+
+        return true;
+    }, []);
+
     // Check if any filter is active (different from default)
     const canReset = useMemo(() => {
         // Check search separately
@@ -275,10 +287,10 @@ export function useDataTable({
         return Object.entries(filters.state).some(([key, value]) => {
             if (key === 'search') return false; // Already checked above
 
-            const defaultValue = defaultFilters[key];
-            return value !== defaultValue && value !== '' && value !== null && value !== undefined;
+            const field = filterFields.find((item) => item.key === key);
+            return isFilterValueActive(value, defaultFilters[key], field);
         });
-    }, [filters.state, defaultFilters, searchDisplayValue]);
+    }, [filters.state, defaultFilters, searchDisplayValue, filterFields, isFilterValueActive]);
 
     // Check if no data found
     const notFound = useMemo(
@@ -307,12 +319,8 @@ export function useDataTable({
             const value = filters.state[field.key];
             const defaultValue = defaultFilters[field.key];
 
-            // Determine if filter is active
             const isActive =
-                value !== defaultValue &&
-                value !== '' &&
-                value !== null &&
-                value !== undefined &&
+                isFilterValueActive(value, defaultValue, field) &&
                 !(field.key === 'status' && value === 'all');
 
             if (isActive) {
@@ -325,7 +333,7 @@ export function useDataTable({
         });
 
         return activeFiltersList;
-    }, [filters.state, filterFields, defaultFilters, searchDisplayValue]);
+    }, [filters.state, filterFields, defaultFilters, searchDisplayValue, isFilterValueActive]);
 
     return {
         // Table state

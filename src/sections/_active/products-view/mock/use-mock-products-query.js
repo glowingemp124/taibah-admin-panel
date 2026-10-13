@@ -5,7 +5,7 @@ import { MOCK_PRODUCTS } from './products';
 // ----------------------------------------------------------------------
 
 export function useGetMockProductsQuery(params = {}) {
-  const { search = '', page = 0, availability = '', limit = 10, category = '' } = params;
+  const { search = '', page = 0, availability = '', limit = 10, category = '', sale = '', rating = '', sellerId } = params;
   const [revision, setRevision] = useState(0);
 
   return useMemo(() => {
@@ -14,8 +14,17 @@ export function useGetMockProductsQuery(params = {}) {
       images: [...(row.images || [])],
       colors: [...(row.colors || [])],
       features: [...(row.features || [])],
-      company: row.company ? { ...row.company } : null,
+      company: row.company
+        ? {
+            ...row.company,
+            seller: row.company.seller ? { ...row.company.seller } : null,
+          }
+        : null,
     }));
+
+    if (sellerId) {
+      rows = rows.filter((row) => row.company?.seller?._id === sellerId);
+    }
 
     if (search) {
       const query = search.toLowerCase();
@@ -30,6 +39,18 @@ export function useGetMockProductsQuery(params = {}) {
 
     if (category && category !== 'all') {
       rows = rows.filter((row) => row.category === category);
+    }
+
+    if (sale === 'on-sale') {
+      rows = rows.filter((row) => row.salePrice && row.salePrice < row.price);
+    }
+
+    if (sale === 'regular') {
+      rows = rows.filter((row) => !row.salePrice || row.salePrice >= row.price);
+    }
+
+    if (rating && rating !== 'all') {
+      rows = rows.filter((row) => Math.round(row.rating || 0) === Number(rating));
     }
 
     const counts = rows.reduce((acc, row) => {
@@ -58,5 +79,5 @@ export function useGetMockProductsQuery(params = {}) {
       error: undefined,
       refetch: () => setRevision((value) => value + 1),
     };
-  }, [search, page, availability, limit, category, revision]);
+  }, [search, page, availability, limit, category, sale, rating, sellerId, revision]);
 }

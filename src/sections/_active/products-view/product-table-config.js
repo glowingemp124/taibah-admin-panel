@@ -51,6 +51,21 @@ export const COLOR_OPTIONS = [
   { value: '#FFFFFF', label: 'White' },
 ];
 
+export const SALE_FILTER_OPTIONS = [
+  { value: 'all', label: 'All Products' },
+  { value: 'on-sale', label: 'On Sale' },
+  { value: 'regular', label: 'No Sale' },
+];
+
+export const RATING_FILTER_OPTIONS = [
+  { value: 'all', label: 'All Ratings' },
+  { value: '5', label: '5 Stars' },
+  { value: '4', label: '4 Stars' },
+  { value: '3', label: '3 Stars' },
+  { value: '2', label: '2 Stars' },
+  { value: '1', label: '1 Star' },
+];
+
 export const FILTER_FIELDS = [
   createFilterField.status({
     key: 'availability',
@@ -69,6 +84,22 @@ export const FILTER_FIELDS = [
     placeholder: 'Category',
     defaultValue: 'all',
     options: [{ value: 'all', label: 'All Categories' }, ...CATEGORY_OPTIONS],
+  }),
+
+  createFilterField.select({
+    key: 'sale',
+    label: 'Sale',
+    placeholder: 'Sale',
+    defaultValue: 'all',
+    options: SALE_FILTER_OPTIONS,
+  }),
+
+  createFilterField.select({
+    key: 'rating',
+    label: 'Rating',
+    placeholder: 'Rating',
+    defaultValue: 'all',
+    options: RATING_FILTER_OPTIONS,
   }),
 ];
 

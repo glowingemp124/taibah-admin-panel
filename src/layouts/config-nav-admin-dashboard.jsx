@@ -53,11 +53,11 @@ export const navDataAdmin = [
   },
   {
     items: [
-      { title: 'Users', path: paths.adminDashboard.users.root, icon: ICONS.user },
-      { title: 'Products', path: paths.adminDashboard.products.root, icon: ICONS.product },
+      { title: 'Users', path: paths.adminDashboard.users.root, icon: ICONS.user, deepMatch: true },
+      { title: 'Products', path: paths.adminDashboard.products.root, icon: ICONS.product, deepMatch: true },
       { title: 'Categories', path: paths.adminDashboard.categories, icon: ICONS.label },
       { title: 'Events', path: paths.adminDashboard.events, icon: ICONS.calendar },
-      { title: 'Orders', path: paths.adminDashboard.orders.root, icon: ICONS.order },
+      { title: 'Orders', path: paths.adminDashboard.orders.root, icon: ICONS.order, deepMatch: true },
       { title: 'Transactions', path: paths.adminDashboard.transactions, icon: ICONS.invoice },
       { title: 'Chat AI Stats', path: paths.adminDashboard.chatAiStats, icon: ICONS.analytics },
       // { title: 'Reviews', path: paths.adminDashboard.reviews, icon: ICONS.blog },
@@ -69,6 +69,7 @@ export const navDataAdmin = [
         children: [
           { title: 'Support', path: paths.adminDashboard.settings.support },
           { title: 'FAQs', path: paths.adminDashboard.settings.faqs },
+          { title: 'Help Center', path: paths.adminDashboard.settings.helpCenter, deepMatch: true },
           { title: 'Privacy Policy', path: paths.adminDashboard.settings.privacy },
           { title: 'Terms of Service', path: paths.adminDashboard.settings.terms },
           { title: 'About Us', path: paths.adminDashboard.settings.about },

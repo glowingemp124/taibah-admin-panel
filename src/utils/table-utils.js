@@ -80,6 +80,18 @@ export const getStatusColor = (status) => {
         'in-stock': 'success',
         'low-stock': 'warning',
         'out-of-stock': 'error',
+        placed: 'info',
+        confirmed: 'info',
+        packed: 'warning',
+        shipped: 'primary',
+        'out-for-delivery': 'warning',
+        delivered: 'success',
+        cancelled: 'error',
+        paid: 'success',
+        refunded: 'info',
+        ended: 'default',
+        open: 'success',
+        closed: 'default',
     };
     return statusColorMap[status] || 'default';
 };

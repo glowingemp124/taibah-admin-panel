@@ -14,13 +14,15 @@ import Stack from '@mui/material/Stack';
 import Typography from '@mui/material/Typography';
 
 import { ColorPreview } from 'src/components/color-utils';
+import { Iconify } from 'src/components/iconify';
 import { Image } from 'src/components/image';
 import { Label } from 'src/components/label';
-import { fCurrency, fShortenNumber } from 'src/utils/format-number';
+import { fCurrency, fNumber, fShortenNumber } from 'src/utils/format-number';
 import { fDate, formatStr } from 'src/utils/format-time';
 import { getStatusColor } from 'src/utils/table-utils';
 
 import { getPrimaryImage } from './mock';
+import { ProductStoreCard } from './product-store-card';
 import { getAvailabilityLabel, getColorLabel } from './product-table-config';
 
 export function ProductViewDialog({ product, open, onClose }) {
@@ -37,6 +39,7 @@ export function ProductViewDialog({ product, open, onClose }) {
 
   const salePrice = product.salePrice || product.price;
   const hasDiscount = product.salePrice && product.salePrice < product.price;
+  const productRating = Math.round(product.rating || 0);
 
   return (
     <Dialog fullWidth maxWidth="md" open={open} onClose={onClose}>
@@ -97,10 +100,10 @@ export function ProductViewDialog({ product, open, onClose }) {
 
             <Typography variant="h5">{product.title}</Typography>
 
-            <Stack direction="row" spacing={1} alignItems="center">
-              <Rating size="small" value={product.rating || 0} precision={0.1} readOnly />
+            <Stack direction="row" spacing={1} alignItems="center" flexWrap="wrap" useFlexGap>
+              <Rating size="small" value={productRating} readOnly />
               <Typography variant="body2" sx={{ color: 'text.secondary' }}>
-                {product.rating || 0} ({fShortenNumber(product.totalReviews || 0)} reviews)
+                {productRating}/5 ({fShortenNumber(product.totalReviews || 0)} reviews)
               </Typography>
             </Stack>
 
@@ -144,29 +147,23 @@ export function ProductViewDialog({ product, open, onClose }) {
               </Stack>
             </Stack>
 
-            <Stack direction="row" spacing={1} alignItems="center">
-              <Typography variant="subtitle2">Availability</Typography>
-              <Label variant="soft" color={getStatusColor(product.availability)}>
-                {getAvailabilityLabel(product.availability)}
-              </Label>
+            <Stack direction="row" spacing={2} alignItems="center" flexWrap="wrap" useFlexGap>
+              <Stack direction="row" spacing={1} alignItems="center">
+                <Typography variant="subtitle2">Availability</Typography>
+                <Label variant="soft" color={getStatusColor(product.availability)}>
+                  {getAvailabilityLabel(product.availability)}
+                </Label>
+              </Stack>
+
+              <Stack direction="row" spacing={0.75} alignItems="center" sx={{ color: 'text.secondary' }}>
+                <Iconify icon="solar:bag-check-bold" width={18} />
+                <Typography variant="body2">
+                  {fNumber(product.soldCount || 0)} sold
+                </Typography>
+              </Stack>
             </Stack>
 
-            {product.company && (
-              <Stack direction="row" spacing={1.5} alignItems="center" sx={{ p: 1.5, borderRadius: 1.5, bgcolor: 'background.neutral' }}>
-                <Avatar src={product.company.logo} alt={product.company.name} variant="rounded" />
-                <Box sx={{ minWidth: 0 }}>
-                  <Typography variant="subtitle2" noWrap>
-                    {product.company.name}
-                  </Typography>
-                  <Typography variant="caption" sx={{ color: 'text.secondary' }} noWrap>
-                    {product.company.description}
-                  </Typography>
-                  <Typography variant="caption" sx={{ display: 'block', color: 'text.secondary' }}>
-                    {product.company.rating} ({fShortenNumber(product.company.reviews)} reviews)
-                  </Typography>
-                </Box>
-              </Stack>
-            )}
+            <ProductStoreCard company={product.company} />
           </Stack>
         </Stack>
 
@@ -178,14 +175,17 @@ export function ProductViewDialog({ product, open, onClose }) {
             </Typography>
             <Stack spacing={2}>
               {product.reviews.map((review) => (
-                <Stack key={review._id} direction="row" spacing={1.5}>
+                <Stack key={review._id} direction="row" spacing={1.5} alignItems="flex-start">
                   <Avatar src={review.avatarUrl} alt={review.name} />
-                  <Box>
-                    <Typography variant="subtitle2">{review.name}</Typography>
+                  <Box sx={{ minWidth: 0, flex: 1 }}>
+                    <Stack direction="row" spacing={1} alignItems="center" justifyContent="space-between" flexWrap="wrap" useFlexGap>
+                      <Typography variant="subtitle2">{review.name}</Typography>
+                      <Rating size="small" value={Math.round(review.rating || 0)} readOnly />
+                    </Stack>
                     <Typography variant="caption" sx={{ color: 'text.disabled' }}>
                       {review.createdAt ? fDate(review.createdAt, formatStr.paramCase.date) : ''}
                     </Typography>
-                    <Typography variant="body2" sx={{ mt: 0.5 }}>
+                    <Typography variant="body2" sx={{ mt: 0.75 }}>
                       {review.comment}
                     </Typography>
                   </Box>

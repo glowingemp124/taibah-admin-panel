@@ -23,13 +23,7 @@ import StatusTabsFilter from 'src/components/filters/status-tabs-filter';
 import { Iconify } from 'src/components/iconify';
 import { Scrollbar } from 'src/components/scrollbar';
 import { toast } from 'src/components/snackbar';
-import {
-  TableEmptyRows,
-  TableHeadCustom,
-  TableNoData,
-  TablePaginationCustom,
-  useTable,
-} from 'src/components/table';
+import { TableEmptyRows, TableHeadCustom, TableNoData, TablePaginationCustom, useTable } from 'src/components/table';
 
 import { useDeleteWalletMutation, useGetWalletsQuery } from 'src/store/Reducer/wallets-api';
 import { applySorting } from 'src/utils/table-utils';
@@ -43,11 +37,7 @@ const STATUS_OPTIONS = [
   { value: 'all', label: 'All', color: 'default' },
   ...WALLET_STATUS_OPTIONS.map((option) => ({
     ...option,
-    color:
-      (option.value === 'active' && 'success') ||
-      (option.value === 'pending' && 'warning') ||
-      (option.value === 'inactive' && 'error') ||
-      'default',
+    color: (option.value === 'active' && 'success') || (option.value === 'pending' && 'warning') || (option.value === 'inactive' && 'error') || 'default',
   })),
 ];
 
@@ -209,35 +199,20 @@ export function WalletListView() {
   // Memoized calculations
   const dataList = useMemo(() => responseData?.data || [], [responseData?.data]);
 
-  const totalRecords = useMemo(
-    () => responseData?.total_length || 0,
-    [responseData?.total_length]
-  );
-  const statusCounts = useMemo(
-    () => responseData?.meta?.counts || {},
-    [responseData?.meta?.counts]
-  );
+  const totalRecords = useMemo(() => responseData?.total_length || 0, [responseData?.total_length]);
+  const statusCounts = useMemo(() => responseData?.meta?.counts || {}, [responseData?.meta?.counts]);
 
   // Apply client-side sorting with memoization
-  const sortedData = useMemo(
-    () => applySorting(dataList, table.orderBy, table.order),
-    [dataList, table.orderBy, table.order]
-  );
+  const sortedData = useMemo(() => applySorting(dataList, table.orderBy, table.order), [dataList, table.orderBy, table.order]);
 
   // Check if filters are active
   const canReset = useMemo(
-    () =>
-      filters.state.name !== '' ||
-      filters.state.status !== 'all' ||
-      filters.state.date !== undefined,
+    () => filters.state.name !== '' || filters.state.status !== 'all' || filters.state.date !== undefined,
     [filters.state.name, filters.state.status, filters.state.date]
   );
 
   // Check if no data found
-  const notFound = useMemo(
-    () => !isLoading && !isFetching && sortedData.length === 0,
-    [isLoading, isFetching, sortedData.length]
-  );
+  const notFound = useMemo(() => !isLoading && !isFetching && sortedData.length === 0, [isLoading, isFetching, sortedData.length]);
 
   // Calculate status counts for tabs
   const getStatusCount = useCallback(
@@ -253,17 +228,12 @@ export function WalletListView() {
 
   return (
     <>
-      <Box sx={{ px: { xs: 2, md: 6 }, pb: 5, pt: 3, display: 'flex', flexDirection: 'column' }}>
+      <Box sx={{ px: { xs: 2, md: 5 }, pb: 5, pt: 3, display: 'flex', flexDirection: 'column' }}>
         <CustomBreadcrumbs
           heading="Wallets"
           links={[{ name: 'Dashboard', href: paths.dashboard.root }, { name: 'Wallets' }]}
           action={
-            <Button
-              component={RouterLink}
-              href={paths.dashboard.user.new}
-              variant="contained"
-              startIcon={<Iconify icon="mingcute:add-line" />}
-            >
+            <Button component={RouterLink} href={paths.dashboard.user.new} variant="contained" startIcon={<Iconify icon="mingcute:add-line" />}>
               New Wallet
             </Button>
           }
@@ -271,12 +241,7 @@ export function WalletListView() {
         />
 
         <Card>
-          <StatusTabsFilter
-            value={filters.state.status}
-            options={STATUS_OPTIONS}
-            onChange={handleFilterStatus}
-            getCount={getStatusCount}
-          />
+          <StatusTabsFilter value={filters.state.status} options={STATUS_OPTIONS} onChange={handleFilterStatus} getCount={getStatusCount} />
 
           <WalletTableToolbar filters={filters} onSearchChange={handleSearchChange} />
 
@@ -309,38 +274,18 @@ export function WalletListView() {
 
             <Scrollbar>
               <Table size={table.dense ? 'small' : 'medium'} sx={{ minWidth: 960 }}>
-                <TableHeadCustom
-                  order={table.order}
-                  orderBy={table.orderBy}
-                  headLabel={TABLE_HEAD}
-                  rowCount={sortedData.length}
-                  onSort={table.onSort}
-                />
+                <TableHeadCustom order={table.order} orderBy={table.orderBy} headLabel={TABLE_HEAD} rowCount={sortedData.length} onSort={table.onSort} />
 
                 <TableBody>
                   {!isLoading &&
                     !isFetching &&
                     sortedData.map((row, index) => (
-                      <WalletTableRow
-                        key={row._id}
-                        row={row}
-                        serialNumber={currentPage * itemsPerPage + index + 1}
-                        onDeleteRow={() => handleDeleteRow(row._id, row.name)}
-                      />
+                      <WalletTableRow key={row._id} row={row} serialNumber={currentPage * itemsPerPage + index + 1} onDeleteRow={() => handleDeleteRow(row._id, row.name)} />
                     ))}
 
-                  {(isLoading || isFetching) && (
-                    <TableEmptyRows height={table.dense ? 56 : 76} emptyRows={itemsPerPage} />
-                  )}
+                  {(isLoading || isFetching) && <TableEmptyRows height={table.dense ? 56 : 76} emptyRows={itemsPerPage} />}
 
-                  <TableNoData
-                    notFound={notFound}
-                    title={
-                      canReset
-                        ? 'No wallets found matching your filters'
-                        : 'No wallets found'
-                    }
-                  />
+                  <TableNoData notFound={notFound} title={canReset ? 'No wallets found matching your filters' : 'No wallets found'} />
                 </TableBody>
               </Table>
             </Scrollbar>
@@ -364,18 +309,11 @@ export function WalletListView() {
         title="Delete Wallet"
         content={
           <>
-            Are you sure you want to delete wallet <strong>{itemToDelete?.name}</strong>? This
-            action cannot be undone.
+            Are you sure you want to delete wallet <strong>{itemToDelete?.name}</strong>? This action cannot be undone.
           </>
         }
         action={
-          <Button
-            variant="contained"
-            color="error"
-            onClick={handleConfirmDelete}
-            disabled={isDeleting}
-            startIcon={isDeleting && <CircularProgress size={20} color="inherit" />}
-          >
+          <Button variant="contained" color="error" onClick={handleConfirmDelete} disabled={isDeleting} startIcon={isDeleting && <CircularProgress size={20} color="inherit" />}>
             {isDeleting ? 'Deleting...' : 'Delete'}
           </Button>
         }

@@ -13,14 +13,7 @@ import { paths } from 'src/routes/paths';
 
 import { CustomBreadcrumbs } from 'src/components/custom-breadcrumbs';
 import { Scrollbar } from 'src/components/scrollbar';
-import {
-  emptyRows,
-  TableEmptyRows,
-  TableHeadCustom,
-  TableNoData,
-  TablePaginationCustom,
-  useTable
-} from 'src/components/table';
+import { emptyRows, TableEmptyRows, TableHeadCustom, TableNoData, TablePaginationCustom, useTable } from 'src/components/table';
 
 import { useGetWalletsQuery } from 'src/store/Reducer/wallets-api';
 import { DevicesTableFiltersResult } from '../sample-table-filters-result';
@@ -66,13 +59,13 @@ export function SampleListView() {
     data: { data = [], total_length = 0 } = {},
     isLoading,
     status,
-    refetch
+    refetch,
   } = useGetWalletsQuery({
     page,
     search: filters.name,
   });
 
-  console.log("total_length", total_length);
+  console.log('total_length', total_length);
 
   const debouncedSearch = useMemo(
     () =>
@@ -129,7 +122,7 @@ export function SampleListView() {
 
   const handleAddCampaign = () => {
     router.push(paths.dashboard.addCampaigns);
-  }
+  };
 
   const handlePageChange = (event, newPage) => {
     setPage(newPage);
@@ -143,7 +136,7 @@ export function SampleListView() {
   const dataFiltered = {};
 
   return (
-    <Box sx={{ px: { xs: 2, md: 6 }, pb: 1, pt: 3, display: 'flex', flexDirection: 'column' }}>
+    <Box sx={{ px: { xs: 2, md: 5 }, pb: 1, pt: 3, display: 'flex', flexDirection: 'column' }}>
       <Box
         sx={{
           gap: 1,
@@ -154,21 +147,11 @@ export function SampleListView() {
           alignItems: { xs: 'start', md: 'center' },
         }}
       >
-        <CustomBreadcrumbs
-          heading="Wallets"
-          links={[
-            { name: 'Dashboard', href: paths.dashboard.root },
-            { name: 'Wallets' },
-          ]}
-          sx={{ mb: { xs: 3, md: 3 } }}
-        />
+        <CustomBreadcrumbs heading="Wallets" links={[{ name: 'Dashboard', href: paths.dashboard.root }, { name: 'Wallets' }]} sx={{ mb: { xs: 3, md: 3 } }} />
       </Box>
 
       <Card>
-        <DevicesTableToolbar
-          filters={{ ...filters, name: searchInput }}
-          onFilters={(name, value) => handleSearchChange({ target: { value } })}
-        />
+        <DevicesTableToolbar filters={{ ...filters, name: searchInput }} onFilters={(name, value) => handleSearchChange({ target: { value } })} />
 
         {canReset && (
           <DevicesTableFiltersResult
@@ -200,29 +183,28 @@ export function SampleListView() {
 
                   <TableBody>
                     {data?.length > 0 ? (
-                      data?.map((row, index) => (
-                        (count = count + 1),
-                        (
-                          <DevicesTableRow
-                            key={row.id || row._id || index}
-                            row={row}
-                            index={index + 1}
-                            selected={table.selected.includes(row.id)}
-                            onSelectRow={() => table.onSelectRow(row.id)}
-                            onViewRow={() => handleViewRow(row.id)}
-                            onEditRow={() => handleEditRow(row.id)}
-                            counter={index + 1 + page * rowsPerPage}
-                          />
+                      data?.map(
+                        (row, index) => (
+                          (count = count + 1),
+                          (
+                            <DevicesTableRow
+                              key={row.id || row._id || index}
+                              row={row}
+                              index={index + 1}
+                              selected={table.selected.includes(row.id)}
+                              onSelectRow={() => table.onSelectRow(row.id)}
+                              onViewRow={() => handleViewRow(row.id)}
+                              onEditRow={() => handleEditRow(row.id)}
+                              counter={index + 1 + page * rowsPerPage}
+                            />
+                          )
                         )
-                      ))
+                      )
                     ) : (
                       <TableNoData notFound={notFound} />
                     )}
 
-                    <TableEmptyRows
-                      height={table.dense ? 56 : 56 + 20}
-                      emptyRows={emptyRows(table.page, table.rowsPerPage, dataFiltered.length)}
-                    />
+                    <TableEmptyRows height={table.dense ? 56 : 56 + 20} emptyRows={emptyRows(table.page, table.rowsPerPage, dataFiltered.length)} />
 
                     {/* <TableNoData notFound={notFound} /> */}
                   </TableBody>
@@ -232,13 +214,7 @@ export function SampleListView() {
           </TableContainer>
         </Box>
 
-        <TablePaginationCustom
-          page={page}
-          count={total_length || 1}
-          rowsPerPage={rowsPerPage}
-          onPageChange={handlePageChange}
-          onRowsPerPageChange={handleRowsPerPageChange}
-        />
+        <TablePaginationCustom page={page} count={total_length || 1} rowsPerPage={rowsPerPage} onPageChange={handlePageChange} onRowsPerPageChange={handleRowsPerPageChange} />
       </Card>
     </Box>
   );

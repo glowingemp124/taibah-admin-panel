@@ -126,7 +126,7 @@ export default function LegalView({ type }) {
   }, [type]);
 
   return (
-    <Box sx={{ px: { xs: 2, md: 6 }, pb: 5, display: 'flex', flexDirection: 'column' }}>
+    <Box sx={{ px: { xs: 2, md: 5 }, pb: 5, display: 'flex', flexDirection: 'column' }}>
       {isLoading ? (
         <LoadingScreen />
       ) : (
@@ -147,7 +147,7 @@ export default function LegalView({ type }) {
                 },
               }}
             >
-              <ReactQuill value={textEn} onChange={handleChangeEn} modules={quillModules} formats={quillFormats} placeholder="Enter content here..." theme="snow" />
+              <ReactQuill value={textEn} onChange={handleChangeEn} modules={quillModules} formats={quillFormats} placeholder="" theme="snow" />
             </StyledPaper>
 
             {errorEn && (

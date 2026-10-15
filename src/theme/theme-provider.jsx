@@ -19,11 +19,7 @@ export function ThemeProvider({ children }) {
   const theme = createTheme(currentLang?.systemValue, settings);
 
   return (
-    <CssVarsProvider
-      theme={theme}
-      defaultMode={schemeConfig.defaultMode}
-      modeStorageKey={schemeConfig.modeStorageKey}
-    >
+    <CssVarsProvider theme={theme} defaultMode={schemeConfig.defaultMode} modeStorageKey={schemeConfig.modeStorageKey}>
       <CssBaseline />
       <RTL direction={settings.direction}>{children}</RTL>
     </CssVarsProvider>

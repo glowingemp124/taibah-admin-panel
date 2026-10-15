@@ -15,15 +15,9 @@ export const TABLE_HEAD = [
   { id: 'company', label: 'Company', width: 170 },
   { id: 'price', label: 'Price', width: 150 },
   { id: 'reviews', label: 'Reviews', width: 130 },
-  { id: 'availability', label: 'Availability', width: 130 },
+  { id: 'quantity', label: 'Quantity', width: 110 },
+  { id: 'favorite', label: 'Favorite', width: 110 },
   { id: 'action', label: 'Action', width: 140 },
-];
-
-export const AVAILABILITY_OPTIONS = [
-  { value: 'all', label: 'All', color: 'default' },
-  { value: 'in-stock', label: 'In Stock', color: 'success' },
-  { value: 'low-stock', label: 'Low Stock', color: 'warning' },
-  { value: 'out-of-stock', label: 'Out of Stock', color: 'error' },
 ];
 
 export const CATEGORY_OPTIONS = [
@@ -67,13 +61,6 @@ export const RATING_FILTER_OPTIONS = [
 ];
 
 export const FILTER_FIELDS = [
-  createFilterField.status({
-    key: 'availability',
-    label: 'Availability',
-    options: AVAILABILITY_OPTIONS,
-    showCounts: true,
-  }),
-
   createFilterField.search({
     placeholder: 'Search products...',
   }),
@@ -108,11 +95,15 @@ export const DEFAULT_FILTERS = FILTER_FIELDS.reduce((acc, field) => {
   return acc;
 }, {});
 
-export const STATUS_FILTER_FIELD = FILTER_FIELDS.find((field) => field.type === 'status');
-
 export const TOOLBAR_FILTER_FIELDS = FILTER_FIELDS.filter((field) => field.type !== 'status');
 
-export const getAvailabilityLabel = (value) =>
-  AVAILABILITY_OPTIONS.find((option) => option.value === value)?.label || value || 'N/A';
-
 export const getColorLabel = (value) => COLOR_OPTIONS.find((option) => option.value === value)?.label || value;
+
+export const getDiscountedPrice = (price, offPercent) => {
+  const off = Number(offPercent) || 0;
+  const base = Number(price) || 0;
+  if (off <= 0 || !base) return null;
+  return Math.round(base * (1 - off / 100) * 100) / 100;
+};
+
+export const isOnSale = (product) => Number(product?.offPercent) > 0;

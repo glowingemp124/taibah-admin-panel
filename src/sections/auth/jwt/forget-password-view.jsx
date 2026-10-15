@@ -74,8 +74,8 @@ export function JwtForgetPasswordView() {
 
       <Typography variant="body2" sx={{ color: 'text.secondary', textAlign: 'center' }}>
         Already have an account?{' '}
-        <Link component={RouterLink} href={paths.auth.jwt.signIn} underline="always" color="text.primary">
-          Log in
+        <Link component={RouterLink} href={'/'} underline="always" color="text.primary">
+          Sign in
         </Link>
       </Typography>
     </Stack>

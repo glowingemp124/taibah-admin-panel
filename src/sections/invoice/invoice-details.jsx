@@ -173,7 +173,7 @@ export function InvoiceDetails({ invoice }) {
           <Box
             component="img"
             alt="logo"
-            src="/assets/logo/logo.png"
+            src="/assets/logo/logo-v1.png"
             sx={{ width: 48, height: 48 }}
           />
 

@@ -5,7 +5,7 @@ import { MOCK_PRODUCTS } from './products';
 // ----------------------------------------------------------------------
 
 export function useGetMockProductsQuery(params = {}) {
-  const { search = '', page = 0, availability = '', limit = 10, category = '', sale = '', rating = '', sellerId } = params;
+  const { search = '', page = 0, limit = 10, category = '', sale = '', rating = '', sellerId } = params;
   const [revision, setRevision] = useState(0);
 
   return useMemo(() => {
@@ -42,24 +42,15 @@ export function useGetMockProductsQuery(params = {}) {
     }
 
     if (sale === 'on-sale') {
-      rows = rows.filter((row) => row.salePrice && row.salePrice < row.price);
+      rows = rows.filter((row) => Number(row.offPercent) > 0);
     }
 
     if (sale === 'regular') {
-      rows = rows.filter((row) => !row.salePrice || row.salePrice >= row.price);
+      rows = rows.filter((row) => !Number(row.offPercent));
     }
 
     if (rating && rating !== 'all') {
       rows = rows.filter((row) => Math.round(row.rating || 0) === Number(rating));
-    }
-
-    const counts = rows.reduce((acc, row) => {
-      acc[row.availability] = (acc[row.availability] || 0) + 1;
-      return acc;
-    }, {});
-
-    if (availability) {
-      rows = rows.filter((row) => row.availability === availability);
     }
 
     const start = page * limit;
@@ -71,7 +62,6 @@ export function useGetMockProductsQuery(params = {}) {
         total_length: rows.length,
         meta: {
           totalRecords: rows.length,
-          counts,
         },
       },
       isLoading: false,
@@ -79,5 +69,5 @@ export function useGetMockProductsQuery(params = {}) {
       error: undefined,
       refetch: () => setRevision((value) => value + 1),
     };
-  }, [search, page, availability, limit, category, sale, rating, sellerId, revision]);
+  }, [search, page, limit, category, sale, rating, sellerId, revision]);
 }

@@ -193,7 +193,7 @@ export function JwtSignInView() {
   const renderHead = (
     <Stack spacing={0.75} sx={{ mb: 4 }}>
       <Typography variant="h3" sx={{ lineHeight: 1.15 }}>
-        Login
+        Sign in
       </Typography>
       <Typography variant="body2" sx={{ color: 'text.secondary' }}>
         Sign in to manage Taibah Market

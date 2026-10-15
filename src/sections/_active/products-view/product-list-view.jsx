@@ -10,12 +10,12 @@ import Table from '@mui/material/Table';
 import TableBody from '@mui/material/TableBody';
 
 import { paths } from 'src/routes/paths';
+import { useRouter } from 'src/routes/hooks';
 
 import { CustomBreadcrumbs } from 'src/components/custom-breadcrumbs';
 import { ConfirmDialog } from 'src/components/custom-dialog';
 import { FlexibleTableFiltersResult } from 'src/components/generic-table/table-filters-result';
 import { FlexibleTableToolbar } from 'src/components/generic-table/table-toolbar';
-import { StatusTabsFilterWrapper } from 'src/components/generic-table/tabs-filter-wrapper';
 import { Iconify } from 'src/components/iconify';
 import { Scrollbar } from 'src/components/scrollbar';
 import { toast } from 'src/components/snackbar';
@@ -25,12 +25,11 @@ import { useDataTable } from 'src/hooks/use-data-table';
 import { calculateSerialNumber } from 'src/utils/table-utils';
 
 import { deleteMockProduct, useGetMockProductsQuery } from './mock';
-import { ProductFormDialog } from './product-form-dialog';
-import { DEFAULT_FILTERS, FILTER_FIELDS, STATUS_FILTER_FIELD, TABLE_HEAD, TABLE_OPTIONS, TOOLBAR_FILTER_FIELDS } from './product-table-config';
+import { DEFAULT_FILTERS, FILTER_FIELDS, TABLE_HEAD, TABLE_OPTIONS, TOOLBAR_FILTER_FIELDS } from './product-table-config';
 import { ProductTableRow } from './product-table-row';
-import { ProductViewDialog } from './product-view-dialog';
 
 export function ProductListView({ embedded = false, sellerId }) {
+  const router = useRouter();
   const transformFilters = useCallback((params) => (sellerId ? { ...params, sellerId } : params), [sellerId]);
 
   const {
@@ -40,7 +39,6 @@ export function ProductListView({ embedded = false, sellerId }) {
     searchDisplayValue,
     dataList,
     totalRecords,
-    meta,
     isLoading,
     isFetching,
     canReset,
@@ -60,47 +58,27 @@ export function ProductListView({ embedded = false, sellerId }) {
     transformFilters,
   });
 
-  const formDialog = useBoolean();
-  const viewDialog = useBoolean();
   const confirm = useBoolean();
-  const [currentProduct, setCurrentProduct] = useState(null);
   const [itemToDelete, setItemToDelete] = useState(null);
   const [isDeleting, setIsDeleting] = useState(false);
 
   const handleOpenCreate = useCallback(() => {
-    setCurrentProduct(null);
-    formDialog.onTrue();
-  }, [formDialog]);
+    router.push(paths.adminDashboard.products.new);
+  }, [router]);
 
   const handleOpenEdit = useCallback(
     (row) => {
-      setCurrentProduct(row);
-      formDialog.onTrue();
+      router.push(paths.adminDashboard.products.edit(row._id));
     },
-    [formDialog]
+    [router]
   );
 
   const handleOpenView = useCallback(
     (row) => {
-      setCurrentProduct(row);
-      viewDialog.onTrue();
+      router.push(paths.adminDashboard.products.details(row._id));
     },
-    [viewDialog]
+    [router]
   );
-
-  const handleCloseForm = useCallback(() => {
-    formDialog.onFalse();
-    if (!viewDialog.value) {
-      setCurrentProduct(null);
-    }
-  }, [formDialog, viewDialog]);
-
-  const handleCloseView = useCallback(() => {
-    viewDialog.onFalse();
-    if (!formDialog.value) {
-      setCurrentProduct(null);
-    }
-  }, [formDialog, viewDialog]);
 
   const handleDeleteRow = useCallback(
     (row) => {
@@ -132,23 +110,8 @@ export function ProductListView({ embedded = false, sellerId }) {
   const notFound = !isBusy && dataList.length === 0;
   const isDense = TABLE_OPTIONS.dense;
 
-  const getStatusCount = useCallback(
-    (status) => {
-      const statusCounts = meta?.counts || {};
-
-      if (status === 'all') {
-        return Object.values(statusCounts).reduce((sum, count) => sum + count, 0);
-      }
-
-      return statusCounts[status] || 0;
-    },
-    [meta]
-  );
-
   const table = (
         <Card>
-          <StatusTabsFilterWrapper filterField={STATUS_FILTER_FIELD} value={filters.state.availability} onChange={handleFilterChange} getCount={getStatusCount} />
-
           <FlexibleTableToolbar
             filterFields={TOOLBAR_FILTER_FIELDS}
             filterValues={{
@@ -231,10 +194,6 @@ export function ProductListView({ embedded = false, sellerId }) {
           {table}
         </Box>
       )}
-
-      <ProductViewDialog product={currentProduct} open={viewDialog.value} onClose={handleCloseView} />
-
-      <ProductFormDialog currentProduct={formDialog.value ? currentProduct : null} open={formDialog.value} onClose={handleCloseForm} onSuccess={refetch} />
 
       <ConfirmDialog
         open={confirm.value}

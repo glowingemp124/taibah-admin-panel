@@ -205,7 +205,9 @@ export const paths = {
     events: `${ROOTS.ADMIN_DASHBOARD}/events`,
     products: {
       root: `${ROOTS.ADMIN_DASHBOARD}/products`,
+      new: `${ROOTS.ADMIN_DASHBOARD}/products/new`,
       details: (id) => `${ROOTS.ADMIN_DASHBOARD}/products/${id}`,
+      edit: (id) => `${ROOTS.ADMIN_DASHBOARD}/products/${id}/edit`,
     },
     orders: {
       root: `${ROOTS.ADMIN_DASHBOARD}/orders`,

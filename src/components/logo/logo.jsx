@@ -19,7 +19,7 @@ export const Logo = forwardRef(
       <Box
         alt={CONFIG.site.name}
         component="img"
-        src={`${CONFIG.site.basePath}/assets/logo/logo.png`}
+        src={`${CONFIG.site.basePath}/assets/logo/logo-v1.png`}
         width={width}
         height={height}
         sx={{ objectFit: 'contain' }}

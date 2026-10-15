@@ -69,6 +69,7 @@ export function HeaderBase({
     menuButton = true,
     localization = true,
     notifications = true,
+    themeToggle = true,
   } = {},
 
   ...other
@@ -151,7 +152,7 @@ export function HeaderBase({
               {/* {contacts && <ContactsPopover data-slot="contacts" data={data?.contacts} />} */}
 
               {/* -- Theme toggle -- */}
-              <ThemeToggleButton data-slot="theme-toggle" />
+              {/* {themeToggle && <ThemeToggleButton data-slot="theme-toggle" />} */}
 
               {/* -- Settings button -- */}
               {/* {settings && <SettingsButton data-slot="settings" />} */}

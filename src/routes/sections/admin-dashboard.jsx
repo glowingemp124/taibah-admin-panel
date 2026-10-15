@@ -14,6 +14,8 @@ const IndexPage = lazy(() => import('src/pages/admin-dashboard'));
 const CategoriesPage = lazy(() => import('src/pages/admin-dashboard/categories'));
 const EventsPage = lazy(() => import('src/pages/admin-dashboard/events'));
 const ProductsPage = lazy(() => import('src/pages/admin-dashboard/products'));
+const ProductCreatePage = lazy(() => import('src/pages/admin-dashboard/products/new'));
+const ProductEditPage = lazy(() => import('src/pages/admin-dashboard/products/edit'));
 const ProductDetailsPage = lazy(() => import('src/pages/admin-dashboard/products/details'));
 const OrdersPage = lazy(() => import('src/pages/admin-dashboard/orders'));
 const OrderDetailsPage = lazy(() => import('src/pages/admin-dashboard/orders/details'));
@@ -54,6 +56,8 @@ export const adminDashboardRoutes = [
         path: 'products',
         children: [
           { element: <ProductsPage />, index: true },
+          { path: 'new', element: <ProductCreatePage /> },
+          { path: ':id/edit', element: <ProductEditPage /> },
           { path: ':id', element: <ProductDetailsPage /> },
         ],
       },

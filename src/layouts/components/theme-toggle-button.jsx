@@ -1,6 +1,6 @@
-import Tooltip from '@mui/material/Tooltip';
 import IconButton from '@mui/material/IconButton';
 import { useColorScheme } from '@mui/material/styles';
+import Tooltip from '@mui/material/Tooltip';
 
 import { Iconify } from 'src/components/iconify';
 import { useSettingsContext } from 'src/components/settings/context';

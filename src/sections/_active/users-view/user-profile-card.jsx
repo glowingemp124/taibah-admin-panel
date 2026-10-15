@@ -8,6 +8,7 @@ import Typography from '@mui/material/Typography';
 
 import { Iconify } from 'src/components/iconify';
 import { Label } from 'src/components/label';
+import { fNumber } from 'src/utils/format-number';
 import { fDate, formatStr } from 'src/utils/format-time';
 import { getStatusColor } from 'src/utils/table-utils';
 
@@ -15,6 +16,8 @@ import { USER_TYPE_OPTIONS } from './user-table-config';
 
 export function UserProfileCard({ user, onEditStatus }) {
   if (!user) return null;
+
+  const isSeller = (user.roles || []).includes('seller');
 
   return (
     <Card sx={{ p: 3 }}>
@@ -43,6 +46,13 @@ export function UserProfileCard({ user, onEditStatus }) {
               </Label>
             ))}
           </Stack>
+
+          {isSeller && (
+            <Stack direction="row" spacing={0.75} alignItems="center" sx={{ color: 'text.secondary' }}>
+              <Iconify icon="solar:heart-bold" width={18} />
+              <Typography variant="body2">{fNumber(user.favoriteCount ?? 0)} favorites</Typography>
+            </Stack>
+          )}
 
           <Typography variant="caption" sx={{ color: 'text.disabled' }}>
             Joined {user.createdAt ? fDate(user.createdAt, formatStr.paramCase.date) : 'N/A'}

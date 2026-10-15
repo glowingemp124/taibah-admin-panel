@@ -10,15 +10,14 @@ import Typography from '@mui/material/Typography';
 
 import { GenericTableRowActions } from 'src/components/generic-table/table-row-actions';
 import { Label } from 'src/components/label';
-import { fCurrency, fShortenNumber } from 'src/utils/format-number';
-import { getStatusColor } from 'src/utils/table-utils';
+import { fCurrency, fNumber, fShortenNumber } from 'src/utils/format-number';
 
 import { getPrimaryImage } from './mock';
-import { getAvailabilityLabel } from './product-table-config';
+import { getDiscountedPrice } from './product-table-config';
 
 export function ProductTableRow({ row, serialNumber, onViewRow, onEditRow, onDeleteRow }) {
-  const salePrice = row.salePrice || row.price;
-  const hasDiscount = row.salePrice && row.salePrice < row.price;
+  const salePrice = getDiscountedPrice(row.price, row.offPercent) || row.price;
+  const hasDiscount = Number(row.offPercent) > 0;
 
   const actions = [
     {
@@ -92,11 +91,9 @@ export function ProductTableRow({ row, serialNumber, onViewRow, onEditRow, onDel
         </Stack>
       </TableCell>
 
-      <TableCell>
-        <Label variant="soft" color={getStatusColor(row.availability)}>
-          {getAvailabilityLabel(row.availability)}
-        </Label>
-      </TableCell>
+      <TableCell sx={{ whiteSpace: 'nowrap' }}>{fNumber(row.quantity ?? 0)}</TableCell>
+
+      <TableCell sx={{ whiteSpace: 'nowrap' }}>{fNumber(row.favoriteCount ?? 0)}</TableCell>
 
       <TableCell>
         <GenericTableRowActions actions={actions} />

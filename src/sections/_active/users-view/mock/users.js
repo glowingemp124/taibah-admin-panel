@@ -22,6 +22,7 @@ export const MOCK_USERS = [
     avatarUrl: _mock.image.avatar(2),
     roles: ['seller'],
     status: 'active',
+    favoriteCount: 86,
     createdAt: '2026-02-03T11:40:00.000Z',
   },
   {
@@ -32,6 +33,7 @@ export const MOCK_USERS = [
     avatarUrl: _mock.image.avatar(3),
     roles: ['buyer', 'seller'],
     status: 'active',
+    favoriteCount: 142,
     createdAt: '2026-02-18T14:05:00.000Z',
   },
   {
@@ -52,6 +54,7 @@ export const MOCK_USERS = [
     avatarUrl: _mock.image.avatar(5),
     roles: ['seller'],
     status: 'active',
+    favoriteCount: 54,
     createdAt: '2026-03-22T16:20:00.000Z',
   },
   {
@@ -62,6 +65,7 @@ export const MOCK_USERS = [
     avatarUrl: _mock.image.avatar(6),
     roles: ['buyer', 'seller'],
     status: 'active',
+    favoriteCount: 210,
     createdAt: '2026-04-09T10:10:00.000Z',
   },
   {
@@ -82,6 +86,7 @@ export const MOCK_USERS = [
     avatarUrl: _mock.image.avatar(8),
     roles: ['seller'],
     status: 'inactive',
+    favoriteCount: 12,
     createdAt: '2026-06-02T09:00:00.000Z',
   },
   {
@@ -92,6 +97,7 @@ export const MOCK_USERS = [
     avatarUrl: _mock.image.avatar(9),
     roles: ['buyer', 'seller'],
     status: 'inactive',
+    favoriteCount: 7,
     createdAt: '2026-07-19T12:25:00.000Z',
   },
   {
@@ -112,6 +118,7 @@ export const MOCK_USERS = [
     avatarUrl: _mock.image.avatar(11),
     roles: ['seller'],
     status: 'active',
+    favoriteCount: 173,
     createdAt: '2026-09-11T07:35:00.000Z',
   },
   {
@@ -122,6 +129,7 @@ export const MOCK_USERS = [
     avatarUrl: _mock.image.avatar(12),
     roles: ['buyer', 'seller'],
     status: 'active',
+    favoriteCount: 95,
     createdAt: '2026-10-01T18:05:00.000Z',
   },
 ];

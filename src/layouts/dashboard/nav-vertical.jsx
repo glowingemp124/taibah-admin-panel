@@ -4,6 +4,7 @@ import { useTheme } from '@mui/material/styles';
 import { varAlpha, hideScrollY } from 'src/theme/styles';
 
 import { Logo } from 'src/components/logo';
+import { CONFIG } from 'src/config-global';
 import { Scrollbar } from 'src/components/scrollbar';
 import { NavSectionMini, NavSectionVertical } from 'src/components/nav-section';
 
@@ -18,8 +19,8 @@ export function NavVertical({ sx, data, slots, isNavMini, layoutQuery, onToggleN
   const renderNavVertical = (
     <>
       {slots?.topArea ?? (
-        <Box sx={{ pl: 3.5, pt: 2, pb: 2 }}>
-          <Logo />
+        <Box sx={{ pl: 0.5, pt: 2, pb: 3, pr: 2 }}>
+          <Logo src={`${CONFIG.site.basePath}/assets/logo/logo-dashboard.png`} width={168} height={40} />
         </Box>
       )}
 

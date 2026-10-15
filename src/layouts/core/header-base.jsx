@@ -138,7 +138,7 @@ export function HeaderBase({
               )}
 
               {/* -- Searchbar -- */}
-              {/* {searchbar && <Searchbar data-slot="searchbar" data={data?.nav} />} */}
+              {searchbar && <Searchbar data-slot="searchbar" data={data?.nav} />}
 
               {/* -- Language popover -- */}
               {/* {localization && <LanguagePopover data-slot="localization" data={data?.langs} />} */}
@@ -152,7 +152,7 @@ export function HeaderBase({
               {/* {contacts && <ContactsPopover data-slot="contacts" data={data?.contacts} />} */}
 
               {/* -- Theme toggle -- */}
-              {/* {themeToggle && <ThemeToggleButton data-slot="theme-toggle" />} */}
+              {themeToggle && <ThemeToggleButton data-slot="theme-toggle" />}
 
               {/* -- Settings button -- */}
               {/* {settings && <SettingsButton data-slot="settings" />} */}

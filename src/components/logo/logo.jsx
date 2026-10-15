@@ -12,14 +12,14 @@ import { logoClasses } from './classes';
 
 export const Logo = forwardRef(
   (
-    { width = 40, height = 40, disableLink = false, className, href = '/', sx, ...other },
+    { width = 40, height = 40, disableLink = false, className, href = '/', src, sx, ...other },
     ref
   ) => {
     const logo = (
       <Box
         alt={CONFIG.site.name}
         component="img"
-        src={`${CONFIG.site.basePath}/assets/logo/logo-v1.png`}
+        src={src || `${CONFIG.site.basePath}/assets/logo/logo-v1.png`}
         width={width}
         height={height}
         sx={{ objectFit: 'contain' }}

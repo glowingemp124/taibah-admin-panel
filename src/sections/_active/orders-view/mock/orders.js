@@ -70,7 +70,7 @@ const customerFromUser = (id) => {
 const buildTimeline = (status, timestamps = {}) =>
   ORDER_STATUS_FLOW.map((step) => {
     const at = timestamps[step.value] || null;
-    const completed = Boolean(at) && status !== 'cancelled';
+    const completed = Boolean(at);
 
     return {
       status: step.value,
@@ -85,7 +85,7 @@ export const MOCK_ORDERS = [
   {
     _id: 'ord-001',
     orderId: 'NB-102328',
-    status: 'out-for-delivery',
+    status: 'on-the-way',
     customer: customerFromUser('usr-003'),
     items: [productItem('prd-001', 1, 'Forest Green')],
     note: 'Please leave the parcel with the building concierge if I am not home.',
@@ -97,12 +97,10 @@ export const MOCK_ORDERS = [
     },
     estimatedDelivery: '18 Mar - 20 Mar',
     createdAt: '2026-03-15T10:24:00.000Z',
-    timeline: buildTimeline('out-for-delivery', {
-      placed: '2026-03-15T10:24:00.000Z',
-      confirmed: '2026-03-15T11:00:00.000Z',
-      packed: '2026-03-16T18:20:00.000Z',
-      shipped: '2026-03-16T18:32:00.000Z',
-      'out-for-deliveryExpected': '2026-03-18T09:00:00.000Z',
+    timeline: buildTimeline('on-the-way', {
+      pending: '2026-03-15T10:24:00.000Z',
+      processing: '2026-03-16T18:20:00.000Z',
+      'on-the-way': '2026-03-16T18:32:00.000Z',
       deliveredExpected: '2026-03-19T18:00:00.000Z',
     }),
   },
@@ -122,18 +120,16 @@ export const MOCK_ORDERS = [
     estimatedDelivery: '12 Mar - 14 Mar',
     createdAt: '2026-03-10T09:12:00.000Z',
     timeline: buildTimeline('delivered', {
-      placed: '2026-03-10T09:12:00.000Z',
-      confirmed: '2026-03-10T09:40:00.000Z',
-      packed: '2026-03-11T14:10:00.000Z',
-      shipped: '2026-03-11T16:05:00.000Z',
-      'out-for-delivery': '2026-03-12T08:20:00.000Z',
+      pending: '2026-03-10T09:12:00.000Z',
+      processing: '2026-03-11T14:10:00.000Z',
+      'on-the-way': '2026-03-12T08:20:00.000Z',
       delivered: '2026-03-12T15:48:00.000Z',
     }),
   },
   {
     _id: 'ord-003',
     orderId: 'NB-102512',
-    status: 'packed',
+    status: 'processing',
     customer: customerFromUser('usr-007'),
     items: [productItem('prd-007', 1, 'Black')],
     note: 'Gift wrap if possible.',
@@ -145,16 +141,15 @@ export const MOCK_ORDERS = [
     },
     estimatedDelivery: '22 Mar - 24 Mar',
     createdAt: '2026-03-18T13:05:00.000Z',
-    timeline: buildTimeline('packed', {
-      placed: '2026-03-18T13:05:00.000Z',
-      confirmed: '2026-03-18T13:30:00.000Z',
-      packed: '2026-03-19T10:15:00.000Z',
+    timeline: buildTimeline('processing', {
+      pending: '2026-03-18T13:05:00.000Z',
+      processing: '2026-03-19T10:15:00.000Z',
     }),
   },
   {
     _id: 'ord-004',
     orderId: 'NB-102588',
-    status: 'placed',
+    status: 'pending',
     customer: customerFromUser('usr-010'),
     items: [productItem('prd-008', 1, 'Gold')],
     note: 'Need this before Eid, please confirm stock.',
@@ -166,14 +161,14 @@ export const MOCK_ORDERS = [
     },
     estimatedDelivery: '25 Mar - 27 Mar',
     createdAt: '2026-03-20T08:44:00.000Z',
-    timeline: buildTimeline('placed', {
-      placed: '2026-03-20T08:44:00.000Z',
+    timeline: buildTimeline('pending', {
+      pending: '2026-03-20T08:44:00.000Z',
     }),
   },
   {
     _id: 'ord-005',
     orderId: 'NB-102610',
-    status: 'shipped',
+    status: 'on-the-way',
     customer: customerFromUser('usr-006'),
     items: [productItem('prd-002', 1, 'Forest Green'), productItem('prd-010', 1, 'Beige')],
     note: '',
@@ -185,17 +180,16 @@ export const MOCK_ORDERS = [
     },
     estimatedDelivery: '21 Mar - 23 Mar',
     createdAt: '2026-03-17T16:18:00.000Z',
-    timeline: buildTimeline('shipped', {
-      placed: '2026-03-17T16:18:00.000Z',
-      confirmed: '2026-03-17T16:50:00.000Z',
-      packed: '2026-03-18T11:05:00.000Z',
-      shipped: '2026-03-18T19:22:00.000Z',
+    timeline: buildTimeline('on-the-way', {
+      pending: '2026-03-17T16:18:00.000Z',
+      processing: '2026-03-18T11:05:00.000Z',
+      'on-the-way': '2026-03-18T19:22:00.000Z',
     }),
   },
   {
     _id: 'ord-006',
     orderId: 'NB-102677',
-    status: 'confirmed',
+    status: 'processing',
     customer: customerFromUser('usr-012'),
     items: [productItem('prd-009', 1, 'Gold')],
     note: 'Call before delivery.',
@@ -207,15 +201,15 @@ export const MOCK_ORDERS = [
     },
     estimatedDelivery: '24 Mar - 26 Mar',
     createdAt: '2026-03-19T11:27:00.000Z',
-    timeline: buildTimeline('confirmed', {
-      placed: '2026-03-19T11:27:00.000Z',
-      confirmed: '2026-03-19T11:55:00.000Z',
+    timeline: buildTimeline('processing', {
+      pending: '2026-03-19T11:27:00.000Z',
+      processing: '2026-03-19T11:55:00.000Z',
     }),
   },
   {
     _id: 'ord-007',
     orderId: 'NB-102701',
-    status: 'cancelled',
+    status: 'pending',
     customer: customerFromUser('usr-004'),
     items: [productItem('prd-006', 1, 'Forest Green')],
     note: 'Customer requested cancellation before packing.',
@@ -227,9 +221,8 @@ export const MOCK_ORDERS = [
     },
     estimatedDelivery: '',
     createdAt: '2026-03-14T07:50:00.000Z',
-    timeline: buildTimeline('cancelled', {
-      placed: '2026-03-14T07:50:00.000Z',
-      confirmed: '2026-03-14T08:10:00.000Z',
+    timeline: buildTimeline('pending', {
+      pending: '2026-03-14T07:50:00.000Z',
     }),
   },
   {
@@ -248,11 +241,9 @@ export const MOCK_ORDERS = [
     estimatedDelivery: '08 Mar - 10 Mar',
     createdAt: '2026-03-06T12:08:00.000Z',
     timeline: buildTimeline('delivered', {
-      placed: '2026-03-06T12:08:00.000Z',
-      confirmed: '2026-03-06T12:30:00.000Z',
-      packed: '2026-03-07T09:40:00.000Z',
-      shipped: '2026-03-07T15:12:00.000Z',
-      'out-for-delivery': '2026-03-08T08:05:00.000Z',
+      pending: '2026-03-06T12:08:00.000Z',
+      processing: '2026-03-07T09:40:00.000Z',
+      'on-the-way': '2026-03-08T08:05:00.000Z',
       delivered: '2026-03-08T13:20:00.000Z',
     }),
   },
@@ -270,7 +261,7 @@ export function updateMockOrder(id, patch) {
     const currentIndex = ORDER_STATUS_FLOW.findIndex((step) => step.value === patch.status);
     order.timeline = ORDER_STATUS_FLOW.map((step, index) => {
       const existing = (order.timeline || []).find((item) => item.status === step.value);
-      const shouldComplete = patch.status !== 'cancelled' && index <= currentIndex;
+      const shouldComplete = index <= currentIndex;
 
       return {
         status: step.value,

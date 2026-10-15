@@ -51,7 +51,7 @@ export function ResultItem({ title, path, groupLabel, onClickItem }) {
         ))}
       />
 
-      {groupLabel && <Label color="info">{groupLabel}</Label>}
+      {/* {groupLabel && <Label color="info">{groupLabel}</Label>} */}
     </ListItemButton>
   );
 }

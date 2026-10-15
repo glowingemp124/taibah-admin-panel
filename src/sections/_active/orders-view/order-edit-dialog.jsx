@@ -30,7 +30,7 @@ const OrderSchema = zod.object({
 export function OrderEditDialog({ currentOrder, open, onClose, onSuccess }) {
   const defaultValues = useMemo(
     () => ({
-      status: currentOrder?.status || 'placed',
+      status: currentOrder?.status || 'pending',
       note: currentOrder?.note || '',
     }),
     [currentOrder]

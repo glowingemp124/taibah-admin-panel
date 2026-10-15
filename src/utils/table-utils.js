@@ -84,6 +84,8 @@ export const getStatusColor = (status) => {
         confirmed: 'info',
         packed: 'warning',
         shipped: 'primary',
+        processing: 'info',
+        'on-the-way': 'primary',
         'out-for-delivery': 'warning',
         delivered: 'success',
         cancelled: 'error',

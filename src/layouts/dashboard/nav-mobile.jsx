@@ -6,6 +6,7 @@ import Drawer, { drawerClasses } from '@mui/material/Drawer';
 import { usePathname } from 'src/routes/hooks';
 
 import { Logo } from 'src/components/logo';
+import { CONFIG } from 'src/config-global';
 import { Scrollbar } from 'src/components/scrollbar';
 import { NavSectionVertical } from 'src/components/nav-section';
 
@@ -37,8 +38,8 @@ export function NavMobile({ data, open, onClose, slots, sx, ...other }) {
       }}
     >
       {slots?.topArea ?? (
-        <Box sx={{ pl: 3.5, pt: 2.5, pb: 1 }}>
-          <Logo />
+        <Box sx={{ pl: 0.5, pt: 2.5, pb: 2, pr: 2 }}>
+          <Logo src={`${CONFIG.site.basePath}/assets/logo/logo-dashboard.png`} width={168} height={40} />
         </Box>
       )}
 

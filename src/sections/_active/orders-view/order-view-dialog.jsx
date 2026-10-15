@@ -57,7 +57,7 @@ export function OrderViewDialog({ order, open, onClose }) {
               Order ID #{order.orderId}
             </Typography>
             <Typography variant="h6" sx={{ mt: 0.5 }}>
-              {order.status === 'out-for-delivery' ? 'Your Order Is On The Way' : getOrderStatusLabel(order.status)}
+              {order.status === 'on-the-way' ? 'Your Order Is On The Way' : getOrderStatusLabel(order.status)}
             </Typography>
             {order.estimatedDelivery && (
               <Typography variant="body2" sx={{ mt: 0.5, opacity: 0.9 }}>

@@ -23,21 +23,16 @@ export const TABLE_HEAD = [
 
 export const ORDER_STATUS_OPTIONS = [
   { value: 'all', label: 'All', color: 'default' },
-  { value: 'placed', label: 'Placed', color: 'info' },
-  { value: 'confirmed', label: 'Confirmed', color: 'info' },
-  { value: 'packed', label: 'Packed', color: 'warning' },
-  { value: 'shipped', label: 'Shipped', color: 'primary' },
-  { value: 'out-for-delivery', label: 'Out For Delivery', color: 'warning' },
+  { value: 'pending', label: 'Pending', color: 'warning' },
+  { value: 'processing', label: 'Processing', color: 'info' },
+  { value: 'on-the-way', label: 'On the Way', color: 'primary' },
   { value: 'delivered', label: 'Delivered', color: 'success' },
-  { value: 'cancelled', label: 'Cancelled', color: 'error' },
 ];
 
 export const ORDER_STATUS_FLOW = [
-  { value: 'placed', label: 'Order Placed', icon: 'solar:check-circle-bold' },
-  { value: 'confirmed', label: 'Confirmed', icon: 'solar:check-circle-bold' },
-  { value: 'packed', label: 'Packed', icon: 'solar:box-bold' },
-  { value: 'shipped', label: 'Shipped', icon: 'solar:delivery-bold' },
-  { value: 'out-for-delivery', label: 'Out For Delivery', icon: 'solar:delivery-bold' },
+  { value: 'pending', label: 'Pending', icon: 'solar:clock-circle-bold' },
+  { value: 'processing', label: 'Processing', icon: 'solar:box-bold' },
+  { value: 'on-the-way', label: 'On the Way', icon: 'solar:delivery-bold' },
   { value: 'delivered', label: 'Delivered', icon: 'solar:clipboard-check-bold' },
 ];
 

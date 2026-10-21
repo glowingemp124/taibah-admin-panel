@@ -51,25 +51,43 @@ export function useCountdownDate(date) {
 
 export function useCountdownSeconds(initCountdown) {
   const [countdown, setCountdown] = useState(initCountdown);
-
-  const remainingSecondsRef = useRef(countdown);
+  const [counting, setCounting] = useState(false);
+  const remainingSecondsRef = useRef(initCountdown);
+  const intervalRef = useRef(null);
 
   const startCountdown = useCallback(() => {
-    remainingSecondsRef.current = countdown;
+    if (intervalRef.current) {
+      clearInterval(intervalRef.current);
+    }
 
-    const intervalId = setInterval(() => {
+    remainingSecondsRef.current = initCountdown;
+    setCountdown(initCountdown);
+    setCounting(true);
+
+    intervalRef.current = setInterval(() => {
       remainingSecondsRef.current -= 1;
 
-      if (remainingSecondsRef.current === 0) {
-        clearInterval(intervalId);
+      if (remainingSecondsRef.current <= 0) {
+        clearInterval(intervalRef.current);
+        intervalRef.current = null;
+        remainingSecondsRef.current = initCountdown;
         setCountdown(initCountdown);
-      } else {
-        setCountdown(remainingSecondsRef.current);
+        setCounting(false);
+        return;
       }
-    }, 1000);
-  }, [initCountdown, countdown]);
 
-  const counting = initCountdown > countdown;
+      setCountdown(remainingSecondsRef.current);
+    }, 1000);
+  }, [initCountdown]);
+
+  useEffect(
+    () => () => {
+      if (intervalRef.current) {
+        clearInterval(intervalRef.current);
+      }
+    },
+    []
+  );
 
   return {
     counting,

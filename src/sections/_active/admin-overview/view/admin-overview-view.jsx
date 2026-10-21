@@ -1,22 +1,32 @@
+import { useCallback, useMemo, useState } from 'react';
+import { useSelector } from 'react-redux';
+
 import { useTheme } from '@mui/material/styles';
 import Typography from '@mui/material/Typography';
 import Grid from '@mui/material/Unstable_Grid2';
+import Stack from '@mui/material/Stack';
 
-import { _analyticOrderTimeline, _bookingReview, _ecommerceBestSalesman, _ecommerceLatestProducts } from 'src/_mock';
-import { CONFIG } from 'src/config-global';
 import { DashboardContent } from 'src/layouts/dashboard';
-
-import { AdminLatestReviews } from 'src/sections/_active/admin-overview/admin-latest-reviews';
-import { AdminTransactions } from 'src/sections/_active/admin-overview/admin-transactions';
-import { AnalyticsCurrentVisits } from 'src/sections/overview/analytics/analytics-current-visits';
-import { AnalyticsOrderTimeline } from 'src/sections/overview/analytics/analytics-order-timeline';
+import { paths } from 'src/routes/paths';
+import { useBoolean } from 'src/hooks/use-boolean';
+import { selectUser } from 'src/store/slices/userSlice';
 import { AnalyticsWebsiteVisits } from 'src/sections/overview/analytics/analytics-website-visits';
-import { AnalyticsWidgetSummary } from 'src/sections/overview/analytics/analytics-widget-summary';
-import { EcommerceBestSalesman } from 'src/sections/overview/e-commerce/ecommerce-best-salesman';
-import { EcommerceLatestProducts } from 'src/sections/overview/e-commerce/ecommerce-latest-products';
-import { EcommerceYearlySales } from 'src/sections/overview/e-commerce/ecommerce-yearly-sales';
+import { fCurrency, fNumber } from 'src/utils/format-number';
 
-// ----------------------------------------------------------------------
+import { getSellerApplications } from 'src/sections/_active/pending-sellers-view/mock';
+import { getOrderTotal, getOrderVendors, MOCK_ORDERS } from 'src/sections/_active/orders-view/mock';
+import { OrderViewDialog } from 'src/sections/_active/orders-view/order-view-dialog';
+import { getPrimaryImage, MOCK_COMPANIES, MOCK_PRODUCTS } from 'src/sections/_active/products-view/mock';
+import { MOCK_TICKETS } from 'src/sections/_active/support-view/mock';
+import { MOCK_TRANSACTIONS } from 'src/sections/_active/transactions-view/mock';
+import { MOCK_USERS } from 'src/sections/_active/users-view/mock';
+import { SellerChartCard } from 'src/sections/_active/seller-overview/seller-chart-card';
+import { SellerStatCard } from 'src/sections/_active/seller-overview/seller-stat-card';
+
+import { AdminLatestOrders } from '../admin-latest-orders';
+import { AdminLatestSellers } from '../admin-latest-sellers';
+import { AdminTopProducts } from '../admin-top-products';
+import { AdminTransactions } from '../admin-transactions';
 
 const GRID_ITEM_SX = {
   display: 'flex',
@@ -25,131 +35,324 @@ const GRID_ITEM_SX = {
 
 const CARD_SX = { height: 1, width: 1 };
 
-// ----------------------------------------------------------------------
+const LOW_STOCK_THRESHOLD = 10;
+
+const MONTHS = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+
+const BAR_AXIS_OPTIONS = {
+  grid: { padding: { left: 8, right: 8, bottom: 12 } },
+  xaxis: {
+    labels: {
+      show: true,
+      rotate: 0,
+      hideOverlappingLabels: false,
+      trim: false,
+      style: { fontSize: '12px' },
+    },
+  },
+};
 
 export function AdminOverviewView() {
   const theme = useTheme();
+  const user = useSelector(selectUser);
+  const viewDialog = useBoolean();
+  const [currentOrder, setCurrentOrder] = useState(null);
+
+  const sellers = MOCK_USERS.filter((row) => (row.roles || []).includes('seller'));
+  const activeProducts = MOCK_PRODUCTS.filter((row) => (row.status || 'active') === 'active');
+  const lowStockItems = MOCK_PRODUCTS.filter((row) => (row.quantity ?? 0) <= LOW_STOCK_THRESHOLD);
+  const pendingOrders = MOCK_ORDERS.filter((row) => row.status === 'pending');
+  const cancelledOrders = MOCK_ORDERS.filter((row) => row.status === 'cancelled');
+  const paidOrders = MOCK_ORDERS.filter((row) => row.status !== 'cancelled');
+  const sales = paidOrders.reduce((sum, row) => sum + getOrderTotal(row), 0);
+  const averageOrderValue = paidOrders.length ? sales / paidOrders.length : 0;
+  const pendingApprovals = getSellerApplications().filter((row) => (row.verificationStatus || 'pending') === 'pending');
+  const openTickets = MOCK_TICKETS.filter((row) => row.status === 'open');
+  const refundedTransactions = MOCK_TRANSACTIONS.filter((row) => row.status === 'refunded');
+  const refundedTotal = refundedTransactions.reduce((sum, row) => sum + (row.amount || 0), 0);
+  const orderTotal = MOCK_TRANSACTIONS.reduce((sum, row) => sum + (row.amount || 0), 0);
+  const currentBalance = orderTotal - refundedTotal;
+
+  const statusSeries = useMemo(() => {
+    const counts = MOCK_ORDERS.reduce((acc, row) => {
+      acc[row.status] = (acc[row.status] || 0) + 1;
+      return acc;
+    }, {});
+
+    return [
+      { label: 'Delivered', value: counts.delivered || 0, color: theme.palette.success.main },
+      { label: 'Processing', value: (counts.processing || 0) + (counts['on-the-way'] || 0), color: theme.palette.warning.light },
+      { label: 'Pending', value: counts.pending || 0, color: theme.palette.info.dark },
+      { label: 'Cancelled', value: counts.cancelled || 0, color: theme.palette.error.main },
+    ].filter((item) => item.value > 0);
+  }, [theme]);
+
+  const registrationTrend = useMemo(() => {
+    const usedMonths = [...new Set(MOCK_USERS.map((row) => new Date(row.createdAt).getMonth()))].sort((a, b) => a - b);
+    const months = usedMonths.length ? usedMonths : [0, 1, 2, 3, 4, 5];
+
+    return {
+      categories: months.map((index) => MONTHS[index]),
+      users: months.map(
+        (month) => MOCK_USERS.filter((row) => (row.roles || []).includes('buyer') && new Date(row.createdAt).getMonth() === month).length
+      ),
+      sellers: months.map(
+        (month) => MOCK_USERS.filter((row) => (row.roles || []).includes('seller') && new Date(row.createdAt).getMonth() === month).length
+      ),
+    };
+  }, []);
+
+  const ordersByCategory = useMemo(() => {
+    const counts = {};
+
+    MOCK_ORDERS.forEach((order) => {
+      (order.items || []).forEach((item) => {
+        const product = MOCK_PRODUCTS.find((row) => row._id === item.productId);
+        const category = product?.category || 'Other';
+        counts[category] = (counts[category] || 0) + (item.quantity || 1);
+      });
+    });
+
+    let rows = Object.entries(counts)
+      .sort((a, b) => b[1] - a[1])
+      .slice(0, 5);
+
+    if (!rows.length) {
+      const byCategory = {};
+      MOCK_PRODUCTS.forEach((product) => {
+        const category = product.category || 'Other';
+        byCategory[category] = (byCategory[category] || 0) + (product.soldCount || 0);
+      });
+      rows = Object.entries(byCategory)
+        .sort((a, b) => b[1] - a[1])
+        .slice(0, 5);
+    }
+
+    return rows;
+  }, []);
+
+  const sellerPerformance = useMemo(() => {
+    const byVendor = new Map();
+
+    MOCK_ORDERS.forEach((order) => {
+      const vendors = getOrderVendors(order);
+      const names = vendors.length ? vendors : [{ _id: 'unknown', name: 'Marketplace' }];
+
+      names.forEach((vendor) => {
+        const current = byVendor.get(vendor._id) || { name: vendor.name, orders: 0, delivered: 0 };
+        current.orders += 1;
+        if (order.status === 'delivered') current.delivered += 1;
+        byVendor.set(vendor._id, current);
+      });
+    });
+
+    let rows = [...byVendor.values()].filter((row) => row.orders > 0).sort((a, b) => b.orders - a.orders).slice(0, 5);
+
+    if (!rows.length) {
+      rows = MOCK_COMPANIES.slice(0, 5).map((company) => ({
+        name: company.name,
+        orders: MOCK_PRODUCTS.filter((product) => product.company?._id === company._id).reduce(
+          (sum, product) => sum + (product.soldCount || 0),
+          0
+        ),
+        delivered: MOCK_PRODUCTS.filter((product) => product.company?._id === company._id).length,
+      }));
+    }
+
+    return rows;
+  }, []);
+
+  const latestSellers = useMemo(
+    () =>
+      [...sellers]
+        .sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt))
+        .slice(0, 5)
+        .map((seller) => {
+          const company = MOCK_COMPANIES.find((row) => row.seller?._id === seller._id);
+          const pending = pendingApprovals.find((row) => row.email?.toLowerCase() === seller.email?.toLowerCase());
+
+          return {
+            _id: seller._id,
+            name: seller.name,
+            storeName: company?.name || pending?.storeName || seller.name,
+            createdAt: seller.createdAt,
+            productCount: MOCK_PRODUCTS.filter((row) => row.company?.seller?._id === seller._id).length,
+            status: pending || seller.status !== 'active' ? 'Pending' : 'Approved',
+            href: pending ? null : paths.adminDashboard.sellers.details(seller._id),
+          };
+        }),
+    [sellers, pendingApprovals]
+  );
+
+  const latestOrders = useMemo(
+    () =>
+      [...MOCK_ORDERS]
+        .sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt))
+        .slice(0, 5)
+        .map((order) => ({
+          ...order,
+          sellerName: getOrderVendors(order)[0]?.name || '—',
+        })),
+    []
+  );
+
+  const topProducts = useMemo(
+    () =>
+      [...MOCK_PRODUCTS]
+        .sort((a, b) => (b.soldCount || 0) - (a.soldCount || 0))
+        .slice(0, 5)
+        .map((product, index) => ({
+          _id: product._id,
+          title: product.title,
+          image: getPrimaryImage(product),
+          category: product.category,
+          storeName: product.company?.name || '—',
+          sales: (product.soldCount || 0) * (product.salePrice || product.price || 0),
+          rank: `Top ${index + 1}`,
+        })),
+    []
+  );
+
+  const recentActivity = useMemo(
+    () =>
+      [...MOCK_TRANSACTIONS]
+        .sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt))
+        .slice(0, 5)
+        .map((row) => {
+          const isRefund = row.status === 'refunded' || row.status === 'cancelled';
+          return {
+            id: row._id,
+            title: isRefund ? `Refund #${row.transactionId}` : `Order #${row.orderId}`,
+            type: isRefund ? 'Refund' : row.status === 'pending' ? 'Pending' : 'Sale',
+            amount: isRefund ? -Math.abs(row.amount || 0) : row.amount || 0,
+            color: isRefund ? 'warning' : row.status === 'pending' ? 'info' : 'success',
+          };
+        }),
+    []
+  );
+
+  const handleOpenView = useCallback(
+    (row) => {
+      setCurrentOrder(row);
+      viewDialog.onTrue();
+    },
+    [viewDialog]
+  );
 
   return (
     <DashboardContent maxWidth="xl">
-      <Typography variant="h4" sx={{ mb: { xs: 3, md: 3 } }}>
-        Dashboard
-      </Typography>
+      <Stack spacing={0.5} sx={{ mb: { xs: 3, md: 3 } }}>
+        <Typography variant="h4">Welcome, {user?.basicInfo?.name || 'Admin'}</Typography>
+        <Typography variant="body2" sx={{ color: 'text.secondary' }}>
+          Marketplace overview
+        </Typography>
+      </Stack>
 
-      <Grid container spacing={3} alignItems="stretch">
+      <Grid container spacing={2.5} alignItems="stretch">
         <Grid xs={12} sm={6} md={3} sx={GRID_ITEM_SX}>
-          <AnalyticsWidgetSummary
-            title="Total sales"
-            percent={12.6}
-            total={187650}
-            sx={CARD_SX}
-            icon={<img alt="sales" src={`${CONFIG.site.basePath}/assets/icons/glass/ic-glass-bag.svg`} />}
-            chart={{
-              categories: ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug'],
-              series: [22, 28, 35, 50, 82, 84, 77, 91],
-            }}
+          <SellerStatCard title="Total Users" value={fNumber(MOCK_USERS.length)} icon="solar:users-group-rounded-bold" />
+        </Grid>
+        <Grid xs={12} sm={6} md={3} sx={GRID_ITEM_SX}>
+          <SellerStatCard title="Total Sellers" value={fNumber(sellers.length)} icon="solar:shop-bold" color="info" />
+        </Grid>
+        <Grid xs={12} sm={6} md={3} sx={GRID_ITEM_SX}>
+          <SellerStatCard title="Total Orders" value={fNumber(MOCK_ORDERS.length)} icon="solar:bag-bold" color="warning" />
+        </Grid>
+        <Grid xs={12} sm={6} md={3} sx={GRID_ITEM_SX}>
+          <SellerStatCard title="Active Products" value={fNumber(activeProducts.length)} icon="solar:box-bold" color="secondary" />
+        </Grid>
+        <Grid xs={12} sm={6} md={3} sx={GRID_ITEM_SX}>
+          <SellerStatCard
+            title="Pending Seller Approvals"
+            value={fNumber(pendingApprovals.length)}
+            icon="solar:user-check-bold"
+            color="success"
+            hint="Needs review"
+            hintColor="warning"
           />
         </Grid>
-
         <Grid xs={12} sm={6} md={3} sx={GRID_ITEM_SX}>
-          <AnalyticsWidgetSummary
-            title="Orders"
-            percent={8.2}
-            total={2840}
+          <SellerStatCard
+            title="Pending Orders"
+            value={fNumber(pendingOrders.length)}
+            icon="solar:clock-circle-bold"
             color="warning"
-            sx={CARD_SX}
-            icon={<img alt="orders" src={`${CONFIG.site.basePath}/assets/icons/glass/ic-glass-buy.svg`} />}
-            chart={{
-              categories: ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug'],
-              series: [40, 48, 50, 62, 70, 75, 80, 88],
-            }}
+            hint="Awaiting processing"
+            hintColor="warning"
           />
         </Grid>
-
         <Grid xs={12} sm={6} md={3} sx={GRID_ITEM_SX}>
-          <AnalyticsWidgetSummary
-            title="Customers"
-            percent={3.4}
-            total={12480}
-            color="secondary"
-            sx={CARD_SX}
-            icon={<img alt="customers" src={`${CONFIG.site.basePath}/assets/icons/glass/ic-glass-users.svg`} />}
-            chart={{
-              categories: ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug'],
-              series: [56, 47, 54, 62, 73, 80, 86, 94],
-            }}
-          />
+          <SellerStatCard title="Open Return Requests" value={fNumber(cancelledOrders.length)} icon="solar:restart-bold" color="error" />
         </Grid>
-
         <Grid xs={12} sm={6} md={3} sx={GRID_ITEM_SX}>
-          <AnalyticsWidgetSummary
-            title="Products"
-            percent={-1.2}
-            total={1264}
-            color="error"
-            sx={CARD_SX}
-            icon={<img alt="products" src={`${CONFIG.site.basePath}/assets/icons/glass/ic-glass-message.svg`} />}
-            chart={{
-              categories: ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug'],
-              series: [120, 132, 128, 140, 136, 142, 138, 130],
-            }}
+          <SellerStatCard title="Open Support Tickets" value={fNumber(openTickets.length)} icon="solar:chat-round-dots-bold" color="info" />
+        </Grid>
+        <Grid xs={12} sm={6} md={3} sx={GRID_ITEM_SX}>
+          <SellerStatCard title="Total Sales" value={fCurrency(sales)} icon="solar:wad-of-money-bold" color="success" />
+        </Grid>
+        <Grid xs={12} sm={6} md={3} sx={GRID_ITEM_SX}>
+          <SellerStatCard title="Cancelled Orders" value={fNumber(cancelledOrders.length)} icon="solar:close-circle-bold" color="error" />
+        </Grid>
+        <Grid xs={12} sm={6} md={3} sx={GRID_ITEM_SX}>
+          <SellerStatCard title="Average Order Value" value={fCurrency(averageOrderValue)} icon="solar:chart-2-bold" color="primary" />
+        </Grid>
+        <Grid xs={12} sm={6} md={3} sx={GRID_ITEM_SX}>
+          <SellerStatCard
+            title="Low Stock Products"
+            value={fNumber(lowStockItems.length)}
+            icon="solar:clipboard-list-bold"
+            color="warning"
+            hint="Needs restock"
+            hintColor="warning"
           />
         </Grid>
 
         <Grid xs={12} md={6} lg={8} sx={GRID_ITEM_SX}>
-          <EcommerceYearlySales
-            title="Yearly sales"
-            subheader="(+18.4%) than last year"
+          <SellerChartCard
+            title="User vs Seller Registration Trend"
+            subheader="Track new customer and seller registrations over time."
+            type="line"
             sx={CARD_SX}
             chart={{
-              colors: [theme.vars.palette.primary.main, theme.vars.palette.warning.main],
-              categories: ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'],
+              colors: [theme.palette.info.main, theme.palette.success.main],
+              categories: registrationTrend.categories,
               series: [
-                {
-                  name: '2024',
-                  data: [
-                    { name: 'Revenue', data: [18, 28, 32, 41, 49, 62, 69, 91, 78, 65, 72, 88] },
-                    { name: 'Orders', data: [10, 16, 18, 24, 31, 38, 42, 51, 44, 39, 41, 48] },
-                  ],
-                },
-                {
-                  name: '2025',
-                  data: [
-                    { name: 'Revenue', data: [24, 35, 41, 52, 61, 74, 82, 98, 90, 84, 88, 104] },
-                    { name: 'Orders', data: [14, 20, 26, 32, 38, 46, 52, 61, 55, 50, 54, 63] },
-                  ],
-                },
+                { name: 'New Users', data: registrationTrend.users },
+                { name: 'New Sellers', data: registrationTrend.sellers },
               ],
             }}
           />
         </Grid>
 
         <Grid xs={12} md={6} lg={4} sx={GRID_ITEM_SX}>
-          <AnalyticsCurrentVisits
+          <SellerChartCard
             title="Orders by status"
+            subheader="Current state of marketplace orders."
+            type="pie"
             sx={CARD_SX}
             chart={{
-              series: [
-                { label: 'Delivered', value: 1480 },
-                { label: 'Processing', value: 620 },
-                { label: 'Pending', value: 410 },
-                { label: 'Cancelled', value: 180 },
-              ],
+              colors: statusSeries.map((item) => item.color),
+              labels: statusSeries.map((item) => item.label),
+              series: statusSeries.length ? statusSeries.map((item) => item.value) : [1],
             }}
           />
         </Grid>
 
         <Grid xs={12} md={6} lg={8} sx={GRID_ITEM_SX}>
           <AnalyticsWebsiteVisits
-            title="Sales vs new customers"
-            subheader="(+12.3%) than last year"
+            title="Orders by Category"
+            subheader="Categories generating the most order activity, based on item counts."
             sx={CARD_SX}
             chart={{
-              categories: ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep'],
-              series: [
-                { name: 'Sales', data: [43, 53, 62, 71, 84, 91, 88, 96, 104] },
-                { name: 'New customers', data: [18, 22, 27, 31, 36, 42, 39, 48, 52] },
-              ],
+              colors: [theme.palette.primary.main],
+              categories: ordersByCategory.map(([label]) => label),
+              series: [{ name: 'Orders', data: ordersByCategory.map(([, value]) => Number(value) || 0) }],
+              options: {
+                ...BAR_AXIS_OPTIONS,
+                xaxis: { ...BAR_AXIS_OPTIONS.xaxis, categories: ordersByCategory.map(([label]) => label) },
+                legend: { show: false },
+                tooltip: { y: { formatter: (value) => `${value} orders` } },
+              },
             }}
           />
         </Grid>
@@ -157,40 +360,49 @@ export function AdminOverviewView() {
         <Grid xs={12} md={6} lg={4} sx={GRID_ITEM_SX}>
           <AdminTransactions
             title="Transactions"
-            refunded={2350}
-            orderTotal={187650}
-            currentBalance={96420}
+            currentBalance={currentBalance}
+            orderTotal={orderTotal}
+            refunded={refundedTotal}
+            list={recentActivity}
             sx={CARD_SX}
           />
         </Grid>
 
-        <Grid xs={12} md={6} lg={4} sx={GRID_ITEM_SX}>
-          <AdminLatestReviews title="Latest reviews" list={_bookingReview} sx={CARD_SX} />
-        </Grid>
-
         <Grid xs={12} md={6} lg={8} sx={GRID_ITEM_SX}>
-          <EcommerceBestSalesman
-            title="Top selling products"
-            tableData={_ecommerceBestSalesman}
+          <AnalyticsWebsiteVisits
+            title="Seller Performance Comparison"
+            subheader="Compare order volume and fulfilment quality for top sellers."
             sx={CARD_SX}
-            headLabel={[
-              { id: 'name', label: 'Product' },
-              { id: 'category', label: 'Category' },
-              { id: 'country', label: 'Region', align: 'center' },
-              { id: 'totalAmount', label: 'Sales', align: 'right' },
-              { id: 'rank', label: 'Rank', align: 'right' },
-            ]}
+            chart={{
+              colors: [theme.palette.primary.main, theme.palette.success.main],
+              categories: sellerPerformance.map((row) => row.name),
+              series: [
+                { name: 'Orders', data: sellerPerformance.map((row) => Number(row.orders) || 0) },
+                { name: 'Delivered Orders', data: sellerPerformance.map((row) => Number(row.delivered) || 0) },
+              ],
+              options: {
+                ...BAR_AXIS_OPTIONS,
+                xaxis: { ...BAR_AXIS_OPTIONS.xaxis, categories: sellerPerformance.map((row) => row.name) },
+                tooltip: { y: { formatter: (value) => `${value} orders` } },
+              },
+            }}
           />
         </Grid>
 
         <Grid xs={12} md={6} lg={4} sx={GRID_ITEM_SX}>
-          <EcommerceLatestProducts title="Latest products" list={_ecommerceLatestProducts} sx={CARD_SX} />
+          <AdminTopProducts title="Top selling products" tableData={topProducts} sx={CARD_SX} />
         </Grid>
 
-        <Grid xs={12} md={6} lg={8} sx={GRID_ITEM_SX}>
-          <AnalyticsOrderTimeline title="Recent orders" list={_analyticOrderTimeline} sx={CARD_SX} />
+        <Grid xs={12} sx={GRID_ITEM_SX}>
+          <AdminLatestSellers title="Latest Registered Sellers" tableData={latestSellers} sx={CARD_SX} />
+        </Grid>
+
+        <Grid xs={12} sx={GRID_ITEM_SX}>
+          <AdminLatestOrders title="Recent Orders Across Marketplace" tableData={latestOrders} onViewRow={handleOpenView} sx={CARD_SX} />
         </Grid>
       </Grid>
+
+      <OrderViewDialog order={currentOrder} open={viewDialog.value} onClose={viewDialog.onFalse} />
     </DashboardContent>
   );
 }

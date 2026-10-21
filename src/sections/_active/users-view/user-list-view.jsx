@@ -24,10 +24,25 @@ import { UserStatusDialog } from './user-status-dialog';
 import { UserTableRow } from './user-table-row';
 import { useGetMockUsersQuery } from './mock';
 
-export function UserListView({ sellerMode = false, userIds, heading = 'Users' }) {
+export function UserListView({
+  sellerMode = false,
+  userIds,
+  heading = 'Users',
+  role,
+  detailsHref,
+  hideUserType,
+}) {
   const router = useRouter();
   const appPaths = sellerMode ? paths.dashboard : paths.adminDashboard;
-  const transformFilters = useCallback((params) => (userIds ? { ...params, userIds } : params), [userIds]);
+  const hideTypeColumn = hideUserType ?? sellerMode ?? Boolean(role);
+  const transformFilters = useCallback(
+    (params) => ({
+      ...params,
+      ...(userIds ? { userIds } : {}),
+      ...(role ? { role } : {}),
+    }),
+    [userIds, role]
+  );
 
   const {
     filters,
@@ -72,8 +87,12 @@ export function UserListView({ sellerMode = false, userIds, heading = 'Users' })
   const isBusy = isLoading || isFetching;
   const notFound = !isBusy && dataList.length === 0;
   const isDense = TABLE_OPTIONS.dense;
-  const tableHead = sellerMode ? TABLE_HEAD.filter((column) => column.id !== 'userType' && column.id !== 'action') : TABLE_HEAD;
-  const toolbarFields = sellerMode ? TOOLBAR_FILTER_FIELDS.filter((field) => field.key !== 'userType') : TOOLBAR_FILTER_FIELDS;
+  const tableHead = TABLE_HEAD.filter((column) => {
+    if (hideTypeColumn && column.id === 'userType') return false;
+    if (sellerMode && column.id === 'action') return false;
+    return true;
+  });
+  const toolbarFields = hideTypeColumn ? TOOLBAR_FILTER_FIELDS.filter((field) => field.key !== 'userType') : TOOLBAR_FILTER_FIELDS;
 
   const getStatusCount = useCallback(
     (status) => {
@@ -141,9 +160,13 @@ export function UserListView({ sellerMode = false, userIds, heading = 'Users' })
                         key={row._id}
                         row={row}
                         serialNumber={calculateSerialNumber(currentPage, itemsPerPage, index)}
-                        hideUserType={sellerMode}
+                        hideUserType={hideTypeColumn}
                         hideActions={sellerMode}
-                        onViewRow={sellerMode ? undefined : () => router.push(paths.adminDashboard.users.details(row._id))}
+                        onViewRow={
+                          sellerMode
+                            ? undefined
+                            : () => router.push(detailsHref ? detailsHref(row._id) : paths.adminDashboard.users.details(row._id))
+                        }
                         onEditRow={sellerMode ? undefined : () => handleOpenEdit(row)}
                       />
                     ))}
@@ -169,4 +192,7 @@ UserListView.propTypes = {
   sellerMode: PropTypes.bool,
   userIds: PropTypes.array,
   heading: PropTypes.string,
+  role: PropTypes.oneOf(['buyer', 'seller']),
+  detailsHref: PropTypes.func,
+  hideUserType: PropTypes.bool,
 };

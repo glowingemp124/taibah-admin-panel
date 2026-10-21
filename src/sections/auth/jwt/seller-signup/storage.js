@@ -82,13 +82,23 @@ export function authenticateSeller({ email, password }) {
   const saved = findSellerProfile(email);
 
   if (saved) {
+    if (saved.provider === 'google') {
+      throw new Error('This account uses Google. Continue with Google to sign in.');
+    }
     if (saved.password && saved.password !== password) {
       throw new Error('Invalid email or password');
     }
     return saved;
   }
 
-  return getDefaultSellerProfile();
+  if (String(email).trim().toLowerCase() === 'user@taibah.com') {
+    if (password !== 'PassWord@2') {
+      throw new Error('Invalid email or password');
+    }
+    return getDefaultSellerProfile();
+  }
+
+  throw new Error('Invalid email or password');
 }
 
 export function formatCountry(value) {

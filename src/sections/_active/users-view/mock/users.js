@@ -135,8 +135,12 @@ export const MOCK_USERS = [
 ];
 
 export function updateMockUserStatus(id, status) {
+  return updateMockUser(id, { status });
+}
+
+export function updateMockUser(id, patch) {
   const user = MOCK_USERS.find((row) => row._id === id);
-  if (user) {
-    user.status = status;
-  }
+  if (!user) return null;
+  Object.assign(user, patch);
+  return user;
 }

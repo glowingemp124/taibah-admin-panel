@@ -68,8 +68,17 @@ export const SellerSignUpSchema = zod
     message: 'Passwords do not match!',
   });
 
+export const SellerAccountSchema = zod.object({
+  firstName: required('First name is required!').min(2, { message: 'First name must be at least 2 characters.' }),
+  lastName: required('Last name is required!').min(2, { message: 'Last name must be at least 2 characters.' }),
+  email: required('Email is required!').email({ message: 'Email must be a valid email address!' }),
+  password: required('Password is required!').regex(PASSWORD_RE, {
+    message: 'Use 8+ characters with a letter, a number, and a symbol.',
+  }),
+});
+
 const STEP_FIELDS = [
-  ['firstName', 'lastName', 'email', 'phone', 'password', 'confirmPassword', 'storeName', 'storeDescription'],
+  ['phone', 'storeName', 'storeDescription'],
   [
     'dateOfBirth',
     'placeOfBirth',

@@ -5,6 +5,8 @@ export const ID_TYPE_OPTIONS = [
 
 export const SIGNUP_STEPS = ['Store & account', 'Verification', 'Documents', 'Review'];
 
+export const ONBOARDING_STEPS = ['Store', 'Verification', 'Documents', 'Review'];
+
 export const PROOF_OF_ADDRESS_HELP =
   'We accept Bank statements/Bank confirmation letters, third-party payment statements, and water, electricity, and gas bills. The proof of address must contain the seller name and address.';
 

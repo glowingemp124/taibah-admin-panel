@@ -65,6 +65,8 @@ export const paths = {
     },
     sellerSignIn: '/',
     sellerSignUp: '/sign-up',
+    sellerVerify: '/verify',
+    sellerOnboarding: '/onboarding',
     adminSignIn: '/admin/login',
     firebase: {
       signIn: `${ROOTS.AUTH}/firebase/sign-in`,
@@ -243,9 +245,18 @@ export const paths = {
     transactions: `${ROOTS.ADMIN_DASHBOARD}/transactions`,
     chatAiStats: `${ROOTS.ADMIN_DASHBOARD}/chat-ai-stats`,
     users: {
-      root: `${ROOTS.ADMIN_DASHBOARD}/users`,
-      details: (id) => `${ROOTS.ADMIN_DASHBOARD}/users/${id}`,
+      root: `${ROOTS.ADMIN_DASHBOARD}/customers`,
+      details: (id) => `${ROOTS.ADMIN_DASHBOARD}/customers/${id}`,
     },
+    customers: {
+      root: `${ROOTS.ADMIN_DASHBOARD}/customers`,
+      details: (id) => `${ROOTS.ADMIN_DASHBOARD}/customers/${id}`,
+    },
+    sellers: {
+      root: `${ROOTS.ADMIN_DASHBOARD}/sellers`,
+      details: (id) => `${ROOTS.ADMIN_DASHBOARD}/sellers/${id}`,
+    },
+    pendingSellers: `${ROOTS.ADMIN_DASHBOARD}/pending-sellers`,
     reviews: `${ROOTS.ADMIN_DASHBOARD}/reviews`,
     notifications: `${ROOTS.ADMIN_DASHBOARD}/notifications`,
     profile: `${ROOTS.ADMIN_DASHBOARD}/profile`,

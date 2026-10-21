@@ -53,7 +53,9 @@ export const navDataAdmin = [
   },
   {
     items: [
-      { title: 'Users', path: paths.adminDashboard.users.root, icon: ICONS.user, deepMatch: true },
+      { title: 'Customers', path: paths.adminDashboard.customers.root, icon: ICONS.user, deepMatch: true },
+      { title: 'Sellers', path: paths.adminDashboard.sellers.root, icon: ICONS.job, deepMatch: true },
+      { title: 'Pending Sellers', path: paths.adminDashboard.pendingSellers, icon: ICONS.lock },
       { title: 'Products', path: paths.adminDashboard.products.root, icon: ICONS.product, deepMatch: true },
       { title: 'Categories', path: paths.adminDashboard.categories, icon: ICONS.label },
       { title: 'Events', path: paths.adminDashboard.events, icon: ICONS.calendar },

@@ -29,7 +29,15 @@ import { handleApiError } from 'src/utils/errorHandler';
 import { getDeviceType } from 'src/utils/getDeviceType';
 import { MOCK_USERS } from 'src/sections/_active/users-view/mock';
 import { MOCK_COMPANIES, updateMockCompany } from 'src/sections/_active/products-view/mock';
-import { authenticateSeller } from 'src/sections/auth/jwt/seller-signup';
+import { authenticateSeller, findSellerProfile } from 'src/sections/auth/jwt/seller-signup';
+import { buildSellerAuthUser } from 'src/sections/auth/jwt/seller-signup/complete-session';
+import {
+  findPendingSignup,
+  SIGNUP_STAGE,
+  startGoogleSignup,
+} from 'src/sections/auth/jwt/seller-signup/signup-session';
+import { GoogleAuthButton } from 'src/sections/auth/jwt/google-auth-button';
+import { mockGoogleAuth } from 'src/sections/auth/jwt/social-auth';
 
 const SignInSchema = zod.object({
   email: zod.string().min(1, { message: 'Email is required!' }).email({ message: 'Email must be a valid email address!' }),
@@ -85,7 +93,12 @@ export function JwtSignInView({ variant = 'seller' }) {
   const isAdmin = variant === 'admin';
 
   const [errorMsg, setErrorMsg] = useState('');
+  const [googleLoading, setGoogleLoading] = useState(false);
   const password = useBoolean();
+
+  const resumeSignup = (session) => {
+    router.push(session.stage === SIGNUP_STAGE.VERIFY ? paths.auth.sellerVerify : paths.auth.sellerOnboarding);
+  };
 
   const defaultValues = {
     email: isAdmin ? 'admin@taibah.com' : 'user@taibah.com',
@@ -116,6 +129,20 @@ export function JwtSignInView({ variant = 'seller' }) {
     };
 
     try {
+      if (!isAdmin) {
+        const pending = findPendingSignup(payload.email);
+        if (pending) {
+          if (pending.provider === 'google') {
+            throw new Error('This account uses Google. Continue with Google to sign in.');
+          }
+          if (pending.password !== payload.password) {
+            throw new Error('Invalid email or password');
+          }
+          resumeSignup(pending);
+          return;
+        }
+      }
+
       const response = await mockLogin(payload);
 
       if (response.error) {
@@ -225,6 +252,40 @@ export function JwtSignInView({ variant = 'seller' }) {
           </LoadingButton>
         </Stack>
       </Form>
+
+      {!isAdmin && (
+        <GoogleAuthButton
+          loading={googleLoading}
+          label="Sign in with Google"
+          onClick={async () => {
+            setErrorMsg('');
+            setGoogleLoading(true);
+            try {
+              const googleProfile = await mockGoogleAuth();
+              const saved = findSellerProfile(googleProfile.email);
+              if (saved) {
+                dispatch(setUser(buildSellerAuthUser(saved)));
+                router.push(paths.dashboard.root);
+                return;
+              }
+
+              const pending = findPendingSignup(googleProfile.email);
+              if (pending) {
+                resumeSignup(pending);
+                return;
+              }
+
+              startGoogleSignup(googleProfile);
+              toast.success('Google account connected. Finish setting up your store.');
+              router.push(paths.auth.sellerOnboarding);
+            } catch (error) {
+              setErrorMsg(error instanceof Error ? error.message : 'Google sign-in failed.');
+            } finally {
+              setGoogleLoading(false);
+            }
+          }}
+        />
+      )}
     </>
   );
 }

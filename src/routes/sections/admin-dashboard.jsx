@@ -1,5 +1,5 @@
 import { lazy, Suspense } from 'react';
-import { Outlet } from 'react-router-dom';
+import { Navigate, Outlet } from 'react-router-dom';
 
 import { CONFIG } from 'src/config-global';
 import { DashboardLayout } from 'src/layouts/dashboard';
@@ -21,8 +21,11 @@ const OrdersPage = lazy(() => import('src/pages/admin-dashboard/orders'));
 const OrderDetailsPage = lazy(() => import('src/pages/admin-dashboard/orders/details'));
 const TransactionsPage = lazy(() => import('src/pages/admin-dashboard/transactions'));
 const ChatAiStatsPage = lazy(() => import('src/pages/admin-dashboard/chat-ai-stats'));
-const UsersPage = lazy(() => import('src/pages/admin-dashboard/users'));
-const UserDetailsPage = lazy(() => import('src/pages/admin-dashboard/users/details'));
+const CustomersPage = lazy(() => import('src/pages/admin-dashboard/customers'));
+const CustomerDetailsPage = lazy(() => import('src/pages/admin-dashboard/customers/details'));
+const SellersPage = lazy(() => import('src/pages/admin-dashboard/sellers'));
+const SellerDetailsPage = lazy(() => import('src/pages/admin-dashboard/sellers/details'));
+const PendingSellersPage = lazy(() => import('src/pages/admin-dashboard/pending-sellers'));
 const ReviewsPage = lazy(() => import('src/pages/admin-dashboard/reviews'));
 const NotificationsPage = lazy(() => import('src/pages/admin-dashboard/notifications'));
 const ProfilePage = lazy(() => import('src/pages/admin-dashboard/profile'));
@@ -73,10 +76,25 @@ export const adminDashboardRoutes = [
       {
         path: 'users',
         children: [
-          { element: <UsersPage />, index: true },
-          { path: ':id', element: <UserDetailsPage /> },
+          { element: <Navigate to="/admin-dashboard/customers" replace />, index: true },
+          { path: ':id', element: <Navigate to="/admin-dashboard/customers" replace /> },
         ],
       },
+      {
+        path: 'customers',
+        children: [
+          { element: <CustomersPage />, index: true },
+          { path: ':id', element: <CustomerDetailsPage /> },
+        ],
+      },
+      {
+        path: 'sellers',
+        children: [
+          { element: <SellersPage />, index: true },
+          { path: ':id', element: <SellerDetailsPage /> },
+        ],
+      },
+      { path: 'pending-sellers', element: <PendingSellersPage /> },
       { path: 'reviews', element: <ReviewsPage /> },
       { path: 'notifications', element: <NotificationsPage /> },
       { path: 'profile', element: <ProfilePage /> },

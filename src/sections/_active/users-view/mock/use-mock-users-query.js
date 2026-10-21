@@ -16,7 +16,7 @@ const matchesUserType = (roles = [], userType) => {
 };
 
 export function useGetMockUsersQuery(params = {}) {
-  const { search = '', page = 0, status = '', limit = 10, userType = '', userIds } = params;
+  const { search = '', page = 0, status = '', limit = 10, userType = '', role = '', userIds } = params;
   const [revision, setRevision] = useState(0);
 
   return useMemo(() => {
@@ -37,7 +37,9 @@ export function useGetMockUsersQuery(params = {}) {
       );
     }
 
-    if (userType && userType !== 'all') {
+    if (role === 'buyer' || role === 'seller') {
+      rows = rows.filter((row) => (row.roles || []).includes(role));
+    } else if (userType && userType !== 'all') {
       rows = rows.filter((row) => matchesUserType(row.roles, userType));
     }
 
@@ -67,5 +69,5 @@ export function useGetMockUsersQuery(params = {}) {
       error: undefined,
       refetch: () => setRevision((value) => value + 1),
     };
-  }, [search, page, status, limit, userType, userIds, revision]);
+  }, [search, page, status, limit, userType, role, userIds, revision]);
 }

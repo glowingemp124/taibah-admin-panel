@@ -24,11 +24,12 @@ export function AdminTransactions({
   currentBalance,
   orderTotal,
   refunded,
+  list = RECENT_TRANSACTIONS,
   sx,
   ...other
 }) {
   return (
-    <Card sx={{ display: 'flex', flexDirection: 'column', ...sx }} {...other}>
+    <Card sx={{ height: 1, width: 1, display: 'flex', flexDirection: 'column', ...sx }} {...other}>
       <CardHeader title={title} />
 
       <Box sx={{ px: 3, pb: 2 }}>
@@ -48,7 +49,7 @@ export function AdminTransactions({
 
       <Scrollbar sx={{ flex: 1, minHeight: 0 }}>
         <Stack spacing={1.5} sx={{ px: 3, pb: 3 }}>
-          {RECENT_TRANSACTIONS.map((item) => (
+          {list.map((item) => (
             <Box
               key={item.id}
               sx={{

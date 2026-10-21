@@ -17,9 +17,11 @@ export function SellerChartCard({ title, subheader, action, type = 'line', chart
 
   const chartColors = chart.colors ?? [theme.palette.primary.main];
 
+  const multiSeries = !isPie && Array.isArray(chart.series) && chart.series.length > 1;
+
   const chartOptions = useChart({
     colors: chartColors,
-    labels: chart.labels,
+    ...(isPie ? { labels: chart.labels } : {}),
     legend: { show: false },
     stroke: isPie
       ? { width: 2, colors: [theme.vars.palette.background.paper] }
@@ -43,10 +45,11 @@ export function SellerChartCard({ title, subheader, action, type = 'line', chart
       : { enabled: false },
     ...(isBar
       ? {
+          chart: { type: 'bar' },
           plotOptions: {
             bar: isHorizontal
               ? { horizontal: true, borderRadius: 2, barHeight: '48%' }
-              : { horizontal: false, borderRadius: 4, columnWidth: '42%' },
+              : { horizontal: false, borderRadius: 4, columnWidth: multiSeries ? '55%' : '42%' },
           },
         }
       : {}),
@@ -66,14 +69,26 @@ export function SellerChartCard({ title, subheader, action, type = 'line', chart
           <ChartLegends labels={chartOptions?.labels} colors={chartOptions?.colors} sx={{ p: 2, justifyContent: 'center' }} />
         </>
       ) : (
-        <Chart
-          key={`${type}-${(chart.categories || []).join('|')}`}
-          type={isBar ? 'bar' : 'line'}
-          series={chart.series}
-          options={chartOptions}
-          height={280}
-          sx={{ py: 1.5, pl: 1, pr: 2 }}
-        />
+        <>
+          <Chart
+            key={`${type}-${(chart.categories || []).join('|')}`}
+            type={isBar ? 'bar' : 'line'}
+            series={chart.series}
+            options={chartOptions}
+            height={360}
+            sx={{ py: 2.5, pl: 1, pr: 2.5 }}
+          />
+          {multiSeries ? (
+            <>
+              <Divider sx={{ borderStyle: 'dashed' }} />
+              <ChartLegends
+                labels={(chart.series || []).map((item) => item.name)}
+                colors={chartOptions?.colors}
+                sx={{ p: 2, justifyContent: 'center' }}
+              />
+            </>
+          ) : null}
+        </>
       )}
     </Card>
   );

@@ -1,3 +1,4 @@
+import PropTypes from 'prop-types';
 import { useCallback, useState } from 'react';
 
 import Box from '@mui/material/Box';
@@ -23,8 +24,10 @@ import { UserStatusDialog } from './user-status-dialog';
 import { UserTableRow } from './user-table-row';
 import { useGetMockUsersQuery } from './mock';
 
-export function UserListView() {
+export function UserListView({ sellerMode = false, userIds, heading = 'Users' }) {
   const router = useRouter();
+  const appPaths = sellerMode ? paths.dashboard : paths.adminDashboard;
+  const transformFilters = useCallback((params) => (userIds ? { ...params, userIds } : params), [userIds]);
 
   const {
     filters,
@@ -50,6 +53,7 @@ export function UserListView() {
     filterFields: FILTER_FIELDS,
     defaultRowsPerPage: 10,
     debounceMs: 500,
+    transformFilters,
   });
 
   const [currentUser, setCurrentUser] = useState(null);
@@ -68,6 +72,8 @@ export function UserListView() {
   const isBusy = isLoading || isFetching;
   const notFound = !isBusy && dataList.length === 0;
   const isDense = TABLE_OPTIONS.dense;
+  const tableHead = sellerMode ? TABLE_HEAD.filter((column) => column.id !== 'userType' && column.id !== 'action') : TABLE_HEAD;
+  const toolbarFields = sellerMode ? TOOLBAR_FILTER_FIELDS.filter((field) => field.key !== 'userType') : TOOLBAR_FILTER_FIELDS;
 
   const getStatusCount = useCallback(
     (status) => {
@@ -85,13 +91,13 @@ export function UserListView() {
   return (
     <>
       <Box sx={{ px: { xs: 2, md: 5 }, pb: 5, pt: 3, display: 'flex', flexDirection: 'column' }}>
-        <CustomBreadcrumbs heading="Users" links={[{ name: 'Dashboard', href: paths.adminDashboard.root }, { name: 'Users' }]} sx={{ mb: { xs: 3, md: 5 } }} />
+        <CustomBreadcrumbs heading={heading} links={[{ name: 'Dashboard', href: appPaths.root }, { name: heading }]} sx={{ mb: { xs: 3, md: 5 } }} />
 
         <Card>
           <StatusTabsFilterWrapper filterField={STATUS_FILTER_FIELD} value={filters.state.status} onChange={handleFilterChange} getCount={getStatusCount} />
 
           <FlexibleTableToolbar
-            filterFields={TOOLBAR_FILTER_FIELDS}
+            filterFields={toolbarFields}
             filterValues={{
               ...filters.state,
               search: searchDisplayValue,
@@ -126,7 +132,7 @@ export function UserListView() {
 
             <Scrollbar>
               <Table size={isDense ? 'small' : 'medium'} sx={{ minWidth: 960 }}>
-                <TableHeadCustom headLabel={TABLE_HEAD} rowCount={dataList.length} />
+                <TableHeadCustom headLabel={tableHead} rowCount={dataList.length} />
 
                 <TableBody>
                   {!isBusy &&
@@ -135,8 +141,10 @@ export function UserListView() {
                         key={row._id}
                         row={row}
                         serialNumber={calculateSerialNumber(currentPage, itemsPerPage, index)}
-                        onViewRow={() => router.push(paths.adminDashboard.users.details(row._id))}
-                        onEditRow={() => handleOpenEdit(row)}
+                        hideUserType={sellerMode}
+                        hideActions={sellerMode}
+                        onViewRow={sellerMode ? undefined : () => router.push(paths.adminDashboard.users.details(row._id))}
+                        onEditRow={sellerMode ? undefined : () => handleOpenEdit(row)}
                       />
                     ))}
 
@@ -152,7 +160,13 @@ export function UserListView() {
         </Card>
       </Box>
 
-      <UserStatusDialog currentUser={currentUser} open={statusDialogOpen} onClose={handleCloseEdit} onSuccess={refetch} />
+      {!sellerMode && <UserStatusDialog currentUser={currentUser} open={statusDialogOpen} onClose={handleCloseEdit} onSuccess={refetch} />}
     </>
   );
 }
+
+UserListView.propTypes = {
+  sellerMode: PropTypes.bool,
+  userIds: PropTypes.array,
+  heading: PropTypes.string,
+};

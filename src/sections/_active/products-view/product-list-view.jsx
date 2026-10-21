@@ -16,6 +16,7 @@ import { CustomBreadcrumbs } from 'src/components/custom-breadcrumbs';
 import { ConfirmDialog } from 'src/components/custom-dialog';
 import { FlexibleTableFiltersResult } from 'src/components/generic-table/table-filters-result';
 import { FlexibleTableToolbar } from 'src/components/generic-table/table-toolbar';
+import { StatusTabsFilterWrapper } from 'src/components/generic-table/tabs-filter-wrapper';
 import { Iconify } from 'src/components/iconify';
 import { Scrollbar } from 'src/components/scrollbar';
 import { toast } from 'src/components/snackbar';
@@ -25,11 +26,12 @@ import { useDataTable } from 'src/hooks/use-data-table';
 import { calculateSerialNumber } from 'src/utils/table-utils';
 
 import { deleteMockProduct, useGetMockProductsQuery } from './mock';
-import { DEFAULT_FILTERS, FILTER_FIELDS, TABLE_HEAD, TABLE_OPTIONS, TOOLBAR_FILTER_FIELDS } from './product-table-config';
+import { DEFAULT_FILTERS, FILTER_FIELDS, STATUS_FILTER_FIELD, TABLE_HEAD, TABLE_OPTIONS, TOOLBAR_FILTER_FIELDS } from './product-table-config';
 import { ProductTableRow } from './product-table-row';
 
-export function ProductListView({ embedded = false, sellerId }) {
+export function ProductListView({ embedded = false, sellerId, sellerMode = false }) {
   const router = useRouter();
+  const appPaths = sellerMode ? paths.dashboard : paths.adminDashboard;
   const transformFilters = useCallback((params) => (sellerId ? { ...params, sellerId } : params), [sellerId]);
 
   const {
@@ -39,6 +41,7 @@ export function ProductListView({ embedded = false, sellerId }) {
     searchDisplayValue,
     dataList,
     totalRecords,
+    meta,
     isLoading,
     isFetching,
     canReset,
@@ -63,21 +66,21 @@ export function ProductListView({ embedded = false, sellerId }) {
   const [isDeleting, setIsDeleting] = useState(false);
 
   const handleOpenCreate = useCallback(() => {
-    router.push(paths.adminDashboard.products.new);
-  }, [router]);
+    router.push(appPaths.products.new);
+  }, [appPaths.products.new, router]);
 
   const handleOpenEdit = useCallback(
     (row) => {
-      router.push(paths.adminDashboard.products.edit(row._id));
+      router.push(appPaths.products.edit(row._id));
     },
-    [router]
+    [appPaths.products, router]
   );
 
   const handleOpenView = useCallback(
     (row) => {
-      router.push(paths.adminDashboard.products.details(row._id));
+      router.push(appPaths.products.details(row._id));
     },
-    [router]
+    [appPaths.products, router]
   );
 
   const handleDeleteRow = useCallback(
@@ -110,8 +113,23 @@ export function ProductListView({ embedded = false, sellerId }) {
   const notFound = !isBusy && dataList.length === 0;
   const isDense = TABLE_OPTIONS.dense;
 
+  const getStatusCount = useCallback(
+    (status) => {
+      const statusCounts = meta?.counts || {};
+
+      if (status === 'all') {
+        return Object.values(statusCounts).reduce((sum, count) => sum + count, 0);
+      }
+
+      return statusCounts[status] || 0;
+    },
+    [meta]
+  );
+
   const table = (
         <Card>
+          <StatusTabsFilterWrapper filterField={STATUS_FILTER_FIELD} value={filters.state.status} onChange={handleFilterChange} getCount={getStatusCount} />
+
           <FlexibleTableToolbar
             filterFields={TOOLBAR_FILTER_FIELDS}
             filterValues={{
@@ -183,7 +201,7 @@ export function ProductListView({ embedded = false, sellerId }) {
         <Box sx={{ px: { xs: 2, md: 5 }, pb: 5, pt: 3, display: 'flex', flexDirection: 'column' }}>
           <CustomBreadcrumbs
             heading="Products"
-            links={[{ name: 'Dashboard', href: paths.adminDashboard.root }, { name: 'Products' }]}
+            links={[{ name: 'Dashboard', href: appPaths.root }, { name: 'Products' }]}
             action={
               <Button variant="contained" color="primary" startIcon={<Iconify icon="mingcute:add-line" />} onClick={handleOpenCreate}>
                 New Product
@@ -217,4 +235,5 @@ export function ProductListView({ embedded = false, sellerId }) {
 ProductListView.propTypes = {
   embedded: PropTypes.bool,
   sellerId: PropTypes.string,
+  sellerMode: PropTypes.bool,
 };

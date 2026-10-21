@@ -1,21 +1,18 @@
 import { Helmet } from 'react-helmet-async';
 
 import { CONFIG } from 'src/config-global';
+import { SellerOverviewView } from 'src/sections/_active/seller-overview';
 
-import { OverviewAppView } from 'src/sections/overview/app/view';
+const metadata = { title: `Dashboard | ${CONFIG.site.name}` };
 
-// ----------------------------------------------------------------------
-
-const metadata = { title: `Dashboard - ${CONFIG.site.name}` };
-
-export default function OverviewAppPage() {
+export default function Page() {
   return (
     <>
       <Helmet>
         <title> {metadata.title}</title>
       </Helmet>
 
-      <OverviewAppView />
+      <SellerOverviewView />
     </>
   );
 }

@@ -1,23 +1,28 @@
 import React from 'react';
 import { useSelector } from 'react-redux';
-import { Navigate, Outlet } from 'react-router-dom';
+import { Navigate, Outlet, useLocation } from 'react-router-dom';
+
+import { paths } from 'src/routes/paths';
+import { PERMISSION_ADMIN } from 'src/hooks/use-app-role';
 
 const ProtectedRoute = ({ children, requiredPermission }) => {
+  const { user } = useSelector((state) => state.user);
+  const location = useLocation();
 
-    const { user } = useSelector((state) => state.user);
+  if (!user) {
+    const adminArea = location.pathname.startsWith('/admin-dashboard') || location.pathname.startsWith('/admin/');
+    return <Navigate to={adminArea ? paths.auth.adminSignIn : paths.auth.sellerSignIn} replace />;
+  }
 
-    if (!user) {
-        return <Navigate to="/" replace />;
-    }
+  const hasPermission = Array.isArray(requiredPermission)
+    ? requiredPermission.includes(user?.permission)
+    : user?.permission === requiredPermission;
 
-    const hasPermission = Array.isArray(requiredPermission) ? requiredPermission.includes(user?.permission) : user?.permission === requiredPermission;
+  if (!hasPermission) {
+    return <Navigate to={user?.permission === PERMISSION_ADMIN ? paths.adminDashboard.root : paths.dashboard.root} replace />;
+  }
 
-    if (!hasPermission) {
-        return <Navigate to="/404" replace />;
-    }
-
-    // Render children or nested routes if all checks pass
-    return children || <Outlet />;
+  return children || <Outlet />;
 };
 
 export default ProtectedRoute;

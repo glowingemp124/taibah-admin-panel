@@ -1,9 +1,5 @@
-import { lazy, Suspense } from 'react';
+import { lazy } from 'react';
 import { Navigate, useRoutes } from 'react-router-dom';
-
-import { MainLayout } from 'src/layouts/main';
-
-import { SplashScreen } from 'src/components/loading-screen';
 
 import { GuestGuard } from 'src/auth/guard';
 import { AuthBrandLayout } from 'src/layouts/auth-brand';
@@ -14,32 +10,50 @@ import { componentsRoutes } from './components';
 import { dashboardRoutes } from './dashboard';
 import { mainRoutes } from './main';
 
-// ----------------------------------------------------------------------
-
-const HomePage = lazy(() => import('src/pages/home'));
-
 const Jwt = {
   SignInPage: lazy(() => import('src/pages/auth/jwt/sign-in')),
   SignUpPage: lazy(() => import('src/pages/auth/jwt/sign-up')),
+  AdminSignInPage: lazy(() => import('src/pages/auth/jwt/admin-sign-in')),
 };
 
 export function Router() {
   return useRoutes([
     {
       path: '/',
-      /**
-       * Skip home page
-       * element: <Navigate to={CONFIG.auth.redirectPath} replace />,
-       */
       element: (
-        // <Suspense fallback={<SplashScreen />}>
-        //   <MainLayout>
-        //     <HomePage />
-        //   </MainLayout>
-        // </Suspense>
         <GuestGuard>
           <AuthBrandLayout>
             <Jwt.SignInPage />
+          </AuthBrandLayout>
+        </GuestGuard>
+      ),
+    },
+    {
+      path: 'login',
+      element: (
+        <GuestGuard>
+          <AuthBrandLayout>
+            <Jwt.SignInPage />
+          </AuthBrandLayout>
+        </GuestGuard>
+      ),
+    },
+    {
+      path: 'sign-up',
+      element: (
+        <GuestGuard>
+          <AuthBrandLayout wide contentMaxWidth={560} constrainInputs={false}>
+            <Jwt.SignUpPage />
+          </AuthBrandLayout>
+        </GuestGuard>
+      ),
+    },
+    {
+      path: 'admin/login',
+      element: (
+        <GuestGuard>
+          <AuthBrandLayout>
+            <Jwt.AdminSignInPage />
           </AuthBrandLayout>
         </GuestGuard>
       ),

@@ -247,6 +247,86 @@ export const MOCK_ORDERS = [
       delivered: '2026-03-08T13:20:00.000Z',
     }),
   },
+  {
+    _id: 'ord-009',
+    orderId: 'NB-102801',
+    status: 'delivered',
+    customer: customerFromUser('usr-001'),
+    items: [productItem('prd-001', 1, 'Forest Green')],
+    note: '',
+    paymentMethod: 'card',
+    address: {
+      type: 'Home',
+      line: '21 Al Nakheel District',
+      city: 'Riyadh',
+    },
+    estimatedDelivery: '04 Mar - 06 Mar',
+    createdAt: '2026-03-02T11:12:00.000Z',
+    timeline: buildTimeline('delivered', {
+      pending: '2026-03-02T11:12:00.000Z',
+      processing: '2026-03-03T09:20:00.000Z',
+      'on-the-way': '2026-03-04T08:10:00.000Z',
+      delivered: '2026-03-04T16:40:00.000Z',
+    }),
+  },
+  {
+    _id: 'ord-010',
+    orderId: 'NB-102856',
+    status: 'processing',
+    customer: customerFromUser('usr-007'),
+    items: [productItem('prd-002', 1, 'Forest Green')],
+    note: '',
+    paymentMethod: 'cash-on-delivery',
+    address: {
+      type: 'Home',
+      line: '44 Al Olaya Street',
+      city: 'Riyadh',
+    },
+    estimatedDelivery: '23 Mar - 25 Mar',
+    createdAt: '2026-03-21T09:30:00.000Z',
+    timeline: buildTimeline('processing', {
+      pending: '2026-03-21T09:30:00.000Z',
+      processing: '2026-03-21T14:05:00.000Z',
+    }),
+  },
+  {
+    _id: 'ord-011',
+    orderId: 'NB-102890',
+    status: 'cancelled',
+    customer: customerFromUser('usr-010'),
+    items: [productItem('prd-010', 1, 'Beige')],
+    note: 'Customer cancelled before packing.',
+    paymentMethod: 'card',
+    address: {
+      type: 'Home',
+      line: '8 King Fahd Road',
+      city: 'Dammam',
+    },
+    estimatedDelivery: '',
+    createdAt: '2026-03-13T15:40:00.000Z',
+    timeline: buildTimeline('pending', {
+      pending: '2026-03-13T15:40:00.000Z',
+    }),
+  },
+  {
+    _id: 'ord-012',
+    orderId: 'NB-102933',
+    status: 'pending',
+    customer: customerFromUser('usr-004'),
+    items: [productItem('prd-001', 2, 'Black')],
+    note: '',
+    paymentMethod: 'cash-on-delivery',
+    address: {
+      type: 'Home',
+      line: '90 Prince Sultan Street',
+      city: 'Jeddah',
+    },
+    estimatedDelivery: '26 Mar - 28 Mar',
+    createdAt: '2026-03-22T08:18:00.000Z',
+    timeline: buildTimeline('pending', {
+      pending: '2026-03-22T08:18:00.000Z',
+    }),
+  },
 ];
 
 export const getOrderTotal = (order) => (order?.items || []).reduce((sum, item) => sum + (item.total || 0), 0);
@@ -261,13 +341,13 @@ export function updateMockOrder(id, patch) {
     const currentIndex = ORDER_STATUS_FLOW.findIndex((step) => step.value === patch.status);
     order.timeline = ORDER_STATUS_FLOW.map((step, index) => {
       const existing = (order.timeline || []).find((item) => item.status === step.value);
-      const shouldComplete = index <= currentIndex;
+      const shouldComplete = patch.status !== 'cancelled' && currentIndex !== -1 && index <= currentIndex;
 
       return {
         status: step.value,
         label: step.label,
-        at: shouldComplete ? existing?.at || new Date().toISOString() : existing?.at || null,
-        completed: shouldComplete,
+        at: shouldComplete ? existing?.at || new Date().toISOString() : existing?.completed ? existing.at : existing?.at || null,
+        completed: shouldComplete || (patch.status === 'cancelled' && Boolean(existing?.completed)),
         expected: existing?.expected || null,
       };
     });

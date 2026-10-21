@@ -18,7 +18,7 @@ import TextField from '@mui/material/TextField';
 import Typography from '@mui/material/Typography';
 
 import { CONFIG } from 'src/config-global';
-import { paths } from 'src/routes/paths';
+import { useAppRole } from 'src/hooks/use-app-role';
 
 import { useBoolean } from 'src/hooks/use-boolean';
 
@@ -132,7 +132,8 @@ function AddArticleDialog({ open, onClose, onSubmit }) {
 
 // ----------------------------------------------------------------------
 
-function ArticleEditor({ article, onBack, onSave, onDelete }) {
+function ArticleEditor({ article, onBack, onSave, onDelete, readOnly = false }) {
+  const { appPaths } = useAppRole();
   const methods = useForm({
     mode: 'all',
     resolver: zodResolver(articleEditorSchema),
@@ -160,9 +161,9 @@ function ArticleEditor({ article, onBack, onSave, onDelete }) {
       <CustomBreadcrumbs
         heading={article.title}
         links={[
-          { name: 'Dashboard', href: paths.adminDashboard.root },
+          { name: 'Dashboard', href: appPaths.root },
           { name: 'Settings' },
-          { name: 'Help Center', href: paths.adminDashboard.settings.helpCenter },
+          { name: 'Help Center' },
           { name: article.title },
         ]}
         action={
@@ -171,14 +172,36 @@ function ArticleEditor({ article, onBack, onSave, onDelete }) {
               Back to articles
             </Button>
 
-            <Button color="error" variant="outlined" startIcon={<Iconify icon="solar:trash-bin-trash-bold" />} onClick={() => onDelete(article)}>
-              Delete
-            </Button>
+            {!readOnly && (
+              <Button color="error" variant="outlined" startIcon={<Iconify icon="solar:trash-bin-trash-bold" />} onClick={() => onDelete(article)}>
+                Delete
+              </Button>
+            )}
           </Stack>
         }
         sx={{ mb: { xs: 3, md: 5 } }}
       />
 
+      {readOnly ? (
+        <Card sx={{ overflow: 'hidden' }}>
+          <Box
+            sx={{
+              height: { xs: 180, md: 260 },
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              background: hasCover ? `url(${article.coverUrl}) center/cover no-repeat` : 'linear-gradient(135deg, #b8e0ff 0%, #eef7ff 100%)',
+            }}
+          />
+          <Stack spacing={2} sx={{ p: 3 }}>
+            <Typography variant="h5">{article.title}</Typography>
+            <Typography variant="body2" sx={{ color: 'text.secondary' }}>
+              {article.description}
+            </Typography>
+            <Box dangerouslySetInnerHTML={{ __html: article.content }} sx={{ '& h2': { typography: 'h6', mb: 1 }, '& p': { typography: 'body2', color: 'text.secondary' } }} />
+          </Stack>
+        </Card>
+      ) : (
       <Form methods={methods} onSubmit={handleFormSubmit}>
         <Card sx={{ overflow: 'hidden' }}>
           <Box
@@ -218,6 +241,7 @@ function ArticleEditor({ article, onBack, onSave, onDelete }) {
           </Stack>
         </Card>
       </Form>
+      )}
     </Box>
   );
 }
@@ -225,6 +249,7 @@ function ArticleEditor({ article, onBack, onSave, onDelete }) {
 // ----------------------------------------------------------------------
 
 export function HelpCenterView() {
+  const { isSeller, appPaths } = useAppRole();
   const addDialog = useBoolean();
   const confirmDelete = useBoolean();
 
@@ -297,7 +322,7 @@ export function HelpCenterView() {
   if (selectedArticle) {
     return (
       <>
-        <ArticleEditor article={selectedArticle} onBack={() => setSelectedArticleId(null)} onSave={handleSaveArticle} onDelete={handleRequestDelete} />
+        <ArticleEditor article={selectedArticle} onBack={() => setSelectedArticleId(null)} onSave={handleSaveArticle} onDelete={handleRequestDelete} readOnly={isSeller} />
 
         <ConfirmDialog
           open={confirmDelete.value}
@@ -323,11 +348,13 @@ export function HelpCenterView() {
       <Box sx={{ px: { xs: 2, md: 5 }, pb: 5, pt: 3, display: 'flex', flexDirection: 'column' }}>
         <CustomBreadcrumbs
           heading="Help Center"
-          links={[{ name: 'Dashboard', href: paths.adminDashboard.root }, { name: 'Settings' }, { name: 'Help Center' }]}
+          links={[{ name: 'Dashboard', href: appPaths.root }, { name: 'Settings' }, { name: 'Help Center' }]}
           action={
-            <Button variant="contained" color="primary" startIcon={<Iconify icon="mingcute:add-line" />} onClick={addDialog.onTrue}>
-              Add article
-            </Button>
+            isSeller ? null : (
+              <Button variant="contained" color="primary" startIcon={<Iconify icon="mingcute:add-line" />} onClick={addDialog.onTrue}>
+                Add article
+              </Button>
+            )
           }
           sx={{ mb: { xs: 3, md: 5 } }}
         />
@@ -402,15 +429,17 @@ export function HelpCenterView() {
                     </Box>
 
                     <Stack direction="row" alignItems="center" spacing={0.5}>
-                      <IconButton
-                        color="error"
-                        onClick={(event) => {
-                          event.stopPropagation();
-                          handleRequestDelete(article);
-                        }}
-                      >
-                        <Iconify icon="solar:trash-bin-trash-bold" />
-                      </IconButton>
+                      {!isSeller && (
+                        <IconButton
+                          color="error"
+                          onClick={(event) => {
+                            event.stopPropagation();
+                            handleRequestDelete(article);
+                          }}
+                        >
+                          <Iconify icon="solar:trash-bin-trash-bold" />
+                        </IconButton>
+                      )}
 
                       <Iconify icon="eva:arrow-ios-forward-fill" width={22} />
                     </Stack>

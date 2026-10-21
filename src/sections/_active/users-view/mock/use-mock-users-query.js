@@ -16,11 +16,16 @@ const matchesUserType = (roles = [], userType) => {
 };
 
 export function useGetMockUsersQuery(params = {}) {
-  const { search = '', page = 0, status = '', limit = 10, userType = '' } = params;
+  const { search = '', page = 0, status = '', limit = 10, userType = '', userIds } = params;
   const [revision, setRevision] = useState(0);
 
   return useMemo(() => {
     let rows = MOCK_USERS.map((row) => ({ ...row, roles: [...(row.roles || [])] }));
+
+    if (Array.isArray(userIds)) {
+      const allowed = new Set(userIds);
+      rows = rows.filter((row) => allowed.has(row._id));
+    }
 
     if (search) {
       const query = search.toLowerCase();
@@ -62,5 +67,5 @@ export function useGetMockUsersQuery(params = {}) {
       error: undefined,
       refetch: () => setRevision((value) => value + 1),
     };
-  }, [search, page, status, limit, userType, revision]);
+  }, [search, page, status, limit, userType, userIds, revision]);
 }

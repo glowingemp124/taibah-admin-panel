@@ -1,3 +1,4 @@
+import PropTypes from 'prop-types';
 import { useCallback, useState } from 'react';
 
 import Box from '@mui/material/Box';
@@ -29,7 +30,10 @@ import { EventViewDialog } from './event-view-dialog';
 import { DEFAULT_FILTERS, FILTER_FIELDS, STATUS_FILTER_FIELD, TABLE_HEAD, TABLE_OPTIONS, TOOLBAR_FILTER_FIELDS } from './event-table-config';
 import { deleteMockEvent, useGetMockEventsQuery } from './mock';
 
-export function EventListView() {
+export function EventListView({ readOnly = false, upcomingOnly = false }) {
+  const appPaths = readOnly ? paths.dashboard : paths.adminDashboard;
+  const transformFilters = useCallback((params) => (upcomingOnly ? { ...params, upcomingOnly: true } : params), [upcomingOnly]);
+
   const {
     filters,
     currentPage,
@@ -54,6 +58,7 @@ export function EventListView() {
     filterFields: FILTER_FIELDS,
     defaultRowsPerPage: 10,
     debounceMs: 500,
+    transformFilters,
   });
 
   const formDialog = useBoolean();
@@ -145,12 +150,14 @@ export function EventListView() {
     <>
       <Box sx={{ px: { xs: 2, md: 5 }, pb: 5, pt: 3, display: 'flex', flexDirection: 'column' }}>
         <CustomBreadcrumbs
-          heading="Events"
-          links={[{ name: 'Dashboard', href: paths.adminDashboard.root }, { name: 'Events' }]}
+          heading={upcomingOnly ? 'Upcoming events' : 'Events'}
+          links={[{ name: 'Dashboard', href: appPaths.root }, { name: 'Events' }]}
           action={
-            <Button variant="contained" color="primary" startIcon={<Iconify icon="mingcute:add-line" />} onClick={handleOpenCreate}>
-              New Event
-            </Button>
+            readOnly ? null : (
+              <Button variant="contained" color="primary" startIcon={<Iconify icon="mingcute:add-line" />} onClick={handleOpenCreate}>
+                New Event
+              </Button>
+            )
           }
           sx={{ mb: { xs: 3, md: 5 } }}
         />
@@ -204,8 +211,8 @@ export function EventListView() {
                         row={row}
                         serialNumber={calculateSerialNumber(currentPage, itemsPerPage, index)}
                         onViewRow={() => handleOpenView(row)}
-                        onEditRow={() => handleOpenEdit(row)}
-                        onDeleteRow={() => handleDeleteRow(row)}
+                        onEditRow={readOnly ? undefined : () => handleOpenEdit(row)}
+                        onDeleteRow={readOnly ? undefined : () => handleDeleteRow(row)}
                       />
                     ))}
 
@@ -223,7 +230,9 @@ export function EventListView() {
 
       <EventViewDialog event={currentEvent} open={viewDialog.value} onClose={handleCloseView} />
 
-      <EventFormDialog currentEvent={formDialog.value ? currentEvent : null} open={formDialog.value} onClose={handleCloseForm} onSuccess={refetch} />
+      {!readOnly && (
+        <EventFormDialog currentEvent={formDialog.value ? currentEvent : null} open={formDialog.value} onClose={handleCloseForm} onSuccess={refetch} />
+      )}
 
       <ConfirmDialog
         open={confirm.value}
@@ -243,3 +252,8 @@ export function EventListView() {
     </>
   );
 }
+
+EventListView.propTypes = {
+  readOnly: PropTypes.bool,
+  upcomingOnly: PropTypes.bool,
+};

@@ -33,7 +33,7 @@ function formatStepTime(step) {
   return 'Pending';
 }
 
-export function OrderViewDialog({ order, open, onClose }) {
+export function OrderViewDialog({ order, open, onClose, hideVendor = false }) {
   if (!order) return null;
 
   const total = getOrderTotal(order);
@@ -50,7 +50,7 @@ export function OrderViewDialog({ order, open, onClose }) {
               p: 2.5,
               borderRadius: 2,
               color: 'primary.contrastText',
-              bgcolor: 'primary.main',
+              bgcolor: order.status === 'cancelled' ? 'error.main' : 'primary.main',
             }}
           >
             <Typography variant="caption" sx={{ opacity: 0.8 }}>
@@ -177,20 +177,22 @@ export function OrderViewDialog({ order, open, onClose }) {
             </Stack>
           </Stack>
 
-          <Box>
-            <Typography variant="subtitle1" sx={{ mb: 1.5 }}>
-              Vendor
-            </Typography>
-            <Stack spacing={1.5}>
-              {vendors.length ? (
-                vendors.map((vendor) => <ProductStoreCard key={vendor._id} company={vendor} />)
-              ) : (
-                <Typography variant="body2" sx={{ color: 'text.secondary' }}>
-                  No vendor details
-                </Typography>
-              )}
-            </Stack>
-          </Box>
+          {!hideVendor && (
+            <Box>
+              <Typography variant="subtitle1" sx={{ mb: 1.5 }}>
+                Vendor
+              </Typography>
+              <Stack spacing={1.5}>
+                {vendors.length ? (
+                  vendors.map((vendor) => <ProductStoreCard key={vendor._id} company={vendor} />)
+                ) : (
+                  <Typography variant="body2" sx={{ color: 'text.secondary' }}>
+                    No vendor details
+                  </Typography>
+                )}
+              </Stack>
+            </Box>
+          )}
         </Stack>
       </DialogContent>
 
@@ -207,4 +209,5 @@ OrderViewDialog.propTypes = {
   order: PropTypes.object,
   open: PropTypes.bool,
   onClose: PropTypes.func,
+  hideVendor: PropTypes.bool,
 };

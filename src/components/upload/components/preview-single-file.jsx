@@ -8,9 +8,13 @@ import { Iconify } from '../../iconify';
 // ----------------------------------------------------------------------
 
 export function SingleFilePreview({ file }) {
-  const fileName = typeof file === 'string' ? file : file.name;
+  if (!file) return null;
 
-  const previewUrl = typeof file === 'string' ? file : URL.createObjectURL(file);
+  const fileName = typeof file === 'string' ? file : file.name || 'Document';
+  const previewUrl =
+    typeof file === 'string'
+      ? file
+      : file.preview || (typeof File !== 'undefined' && file instanceof Blob ? URL.createObjectURL(file) : '');
 
   return (
     <Box
@@ -21,19 +25,41 @@ export function SingleFilePreview({ file }) {
         width: 1,
         height: 1,
         position: 'absolute',
+        display: 'flex',
+        alignItems: 'center',
+        justifyContent: 'center',
       }}
     >
-      <Box
-        component="img"
-        alt={fileName}
-        src={previewUrl}
-        sx={{
-          width: 1,
-          height: 1,
-          borderRadius: 1,
-          objectFit: 'cover',
-        }}
-      />
+      {previewUrl ? (
+        <Box
+          component="img"
+          alt={fileName}
+          src={previewUrl}
+          sx={{
+            width: 1,
+            height: 1,
+            borderRadius: 1,
+            objectFit: 'cover',
+          }}
+        />
+      ) : (
+        <Box
+          sx={{
+            px: 2,
+            py: 1,
+            maxWidth: 1,
+            borderRadius: 1,
+            bgcolor: 'background.paper',
+            typography: 'caption',
+            fontWeight: 600,
+            overflow: 'hidden',
+            textOverflow: 'ellipsis',
+            whiteSpace: 'nowrap',
+          }}
+        >
+          {fileName}
+        </Box>
+      )}
     </Box>
   );
 }

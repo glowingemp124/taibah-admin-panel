@@ -1,6 +1,6 @@
 import { useAuth0 } from '@auth0/auth0-react';
 import { useCallback } from 'react';
-import { useDispatch } from 'react-redux';
+import { useDispatch, useSelector } from 'react-redux';
 
 import Button from '@mui/material/Button';
 
@@ -15,7 +15,9 @@ import { signOut as firebaseSignOut } from 'src/auth/context/firebase/action';
 import { signOut as jwtSignOut } from 'src/auth/context/jwt/action';
 import { signOut as supabaseSignOut } from 'src/auth/context/supabase/action';
 import { useAuthContext } from 'src/auth/hooks';
-import { logout } from 'src/store/slices/userSlice';
+import { PERMISSION_ADMIN } from 'src/hooks/use-app-role';
+import { paths } from 'src/routes/paths';
+import { logout, selectUser } from 'src/store/slices/userSlice';
 import { walletsApi } from 'src/store/Reducer/wallets-api';
 import { categoriesApi } from 'src/store/Reducer/categories-api';
 import { authApi } from 'src/store/Reducer/auth';
@@ -33,6 +35,7 @@ const signOut =
 export function SignOutButton({ onClose, ...other }) {
   const router = useRouter();
   const dispatch = useDispatch();
+  const user = useSelector(selectUser);
 
   const { checkUserSession } = useAuthContext();
   const { logout: signOutAuth0 } = useAuth0();
@@ -44,24 +47,22 @@ export function SignOutButton({ onClose, ...other }) {
       dispatch(categoriesApi.util.resetApiState());
       dispatch(authApi.util.resetApiState());
 
-      // Logout user
+      const loginPath = user?.permission === PERMISSION_ADMIN ? paths.auth.adminSignIn : paths.auth.sellerSignIn;
+
       dispatch(logout());
 
-      // Clear localStorage
       localStorage.clear();
 
-      // Close modal if open
       onClose?.();
 
-      // Redirect to login
-      router.replace('/');
+      router.replace(loginPath);
 
       // toast.success('Logged out successfully');
     } catch (error) {
       console.error('Logout error:', error);
       toast.error('Unable to logout!');
     }
-  }, [dispatch, onClose, router]);
+  }, [dispatch, onClose, router, user?.permission]);
 
   const handleLogoutAuth0 = useCallback(async () => {
     try {

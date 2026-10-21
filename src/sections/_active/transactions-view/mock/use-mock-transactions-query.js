@@ -5,7 +5,7 @@ import { MOCK_TRANSACTIONS } from './transactions';
 // ----------------------------------------------------------------------
 
 export function useGetMockTransactionsQuery(params = {}) {
-  const { search = '', page = 0, status = '', limit = 10, paymentMethod = '', startDate, endDate, userId } = params;
+  const { search = '', page = 0, status = '', limit = 10, paymentMethod = '', startDate, endDate, userId, sellerId } = params;
   const [revision, setRevision] = useState(0);
 
   return useMemo(() => {
@@ -22,6 +22,10 @@ export function useGetMockTransactionsQuery(params = {}) {
 
     if (userId) {
       rows = rows.filter((row) => row.customer?._id === userId);
+    }
+
+    if (sellerId) {
+      rows = rows.filter((row) => row.vendor?.seller?._id === sellerId);
     }
 
     if (search) {
@@ -79,5 +83,5 @@ export function useGetMockTransactionsQuery(params = {}) {
       error: undefined,
       refetch: () => setRevision((value) => value + 1),
     };
-  }, [search, page, status, limit, paymentMethod, startDate, endDate, userId, revision]);
+  }, [search, page, status, limit, paymentMethod, startDate, endDate, userId, sellerId, revision]);
 }

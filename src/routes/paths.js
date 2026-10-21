@@ -63,6 +63,9 @@ export const paths = {
       verifyPassword: `${ROOTS.AUTH}/verify-password`,
       resetPassword: `${ROOTS.AUTH}/reset-password`,
     },
+    sellerSignIn: '/',
+    sellerSignUp: '/sign-up',
+    adminSignIn: '/admin/login',
     firebase: {
       signIn: `${ROOTS.AUTH}/firebase/sign-in`,
       verify: `${ROOTS.AUTH}/firebase/verify`,
@@ -99,6 +102,30 @@ export const paths = {
   // DASHBOARD
   dashboard: {
     root: ROOTS.DASHBOARD,
+    products: {
+      root: `${ROOTS.DASHBOARD}/products`,
+      new: `${ROOTS.DASHBOARD}/products/new`,
+      details: (id) => `${ROOTS.DASHBOARD}/products/${id}`,
+      edit: (id) => `${ROOTS.DASHBOARD}/products/${id}/edit`,
+    },
+    orders: {
+      root: `${ROOTS.DASHBOARD}/orders`,
+      details: (id) => `${ROOTS.DASHBOARD}/orders/${id}`,
+    },
+    events: `${ROOTS.DASHBOARD}/events`,
+    customers: `${ROOTS.DASHBOARD}/customers`,
+    reviews: `${ROOTS.DASHBOARD}/reviews`,
+    storeSettings: `${ROOTS.DASHBOARD}/profile?tab=store`,
+    settings: {
+      root: `${ROOTS.DASHBOARD}/settings`,
+      support: `${ROOTS.DASHBOARD}/settings/support`,
+      faqs: `${ROOTS.DASHBOARD}/settings/faqs`,
+      helpCenter: `${ROOTS.DASHBOARD}/settings/help-center`,
+      helpCenterDetails: (id) => `${ROOTS.DASHBOARD}/settings/help-center/${id}`,
+      privacy: `${ROOTS.DASHBOARD}/settings/privacy`,
+      terms: `${ROOTS.DASHBOARD}/settings/terms`,
+      about: `${ROOTS.DASHBOARD}/settings/about`,
+    },
     mail: `${ROOTS.DASHBOARD}/mail`,
     chat: `${ROOTS.DASHBOARD}/chat`,
     blank: `${ROOTS.DASHBOARD}/blank`,

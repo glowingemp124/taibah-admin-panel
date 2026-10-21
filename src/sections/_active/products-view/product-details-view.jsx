@@ -10,7 +10,6 @@ import Rating from '@mui/material/Rating';
 import Stack from '@mui/material/Stack';
 import Typography from '@mui/material/Typography';
 
-import { paths } from 'src/routes/paths';
 import { RouterLink } from 'src/routes/components';
 
 import { ColorPreview } from 'src/components/color-utils';
@@ -21,10 +20,13 @@ import { Image } from 'src/components/image';
 import { Label } from 'src/components/label';
 import { fCurrency, fNumber, fShortenNumber } from 'src/utils/format-number';
 import { fDate, formatStr } from 'src/utils/format-time';
+import { getStatusColor } from 'src/utils/table-utils';
+
+import { useAppRole } from 'src/hooks/use-app-role';
 
 import { getPrimaryImage, MOCK_PRODUCTS } from './mock';
 import { ProductStoreCard } from './product-store-card';
-import { getDiscountedPrice } from './product-table-config';
+import { getDiscountedPrice, getProductStatusLabel } from './product-table-config';
 
 function Gallery({ product }) {
   const images = product.images || [];
@@ -75,6 +77,7 @@ function Gallery({ product }) {
 
 export function ProductDetailsView() {
   const { id } = useParams();
+  const { appPaths } = useAppRole();
   const [product, setProduct] = useState(() => MOCK_PRODUCTS.find((row) => row._id === id) || null);
 
   useEffect(() => {
@@ -90,6 +93,7 @@ export function ProductDetailsView() {
 
     return [
       { label: 'Category', value: product.category || 'N/A' },
+      { label: 'Status', value: getProductStatusLabel(product.status) },
       { label: 'Quantity', value: fNumber(product.quantity ?? 0) },
       { label: 'Sold', value: fNumber(product.soldCount || 0) },
       { label: 'Created', value: product.createdAt ? fDate(product.createdAt, formatStr.paramCase.date) : 'N/A' },
@@ -106,7 +110,7 @@ export function ProductDetailsView() {
       <Box sx={{ px: { xs: 2, md: 5 }, pb: 5, pt: 3 }}>
         <CustomBreadcrumbs
           heading="Product details"
-          links={[{ name: 'Dashboard', href: paths.adminDashboard.root }, { name: 'Products', href: paths.adminDashboard.products.root }, { name: 'Details' }]}
+          links={[{ name: 'Dashboard', href: appPaths.root }, { name: 'Products', href: appPaths.products.root }, { name: 'Details' }]}
           sx={{ mb: { xs: 3, md: 5 } }}
         />
         <EmptyContent
@@ -114,7 +118,7 @@ export function ProductDetailsView() {
           title="Product not found"
           description="This product does not exist or has been removed."
           action={
-            <Button component={RouterLink} href={paths.adminDashboard.products.root} variant="contained" color="primary">
+            <Button component={RouterLink} href={appPaths.products.root} variant="contained" color="primary">
               Back to products
             </Button>
           }
@@ -130,16 +134,16 @@ export function ProductDetailsView() {
         <CustomBreadcrumbs
           heading={product.title}
           links={[
-            { name: 'Dashboard', href: paths.adminDashboard.root },
-            { name: 'Products', href: paths.adminDashboard.products.root },
+            { name: 'Dashboard', href: appPaths.root },
+            { name: 'Products', href: appPaths.products.root },
             { name: product.title },
           ]}
           action={
             <Stack direction="row" spacing={1.5}>
-              <Button component={RouterLink} href={paths.adminDashboard.products.root} variant="outlined" color="primary" startIcon={<Iconify icon="eva:arrow-ios-back-fill" />}>
+              <Button component={RouterLink} href={appPaths.products.root} variant="outlined" color="primary" startIcon={<Iconify icon="eva:arrow-ios-back-fill" />}>
                 Back
               </Button>
-              <Button component={RouterLink} href={paths.adminDashboard.products.edit(product._id)} variant="contained" color="primary" startIcon={<Iconify icon="solar:pen-bold" />}>
+              <Button component={RouterLink} href={appPaths.products.edit(product._id)} variant="contained" color="primary" startIcon={<Iconify icon="solar:pen-bold" />}>
                 Edit
               </Button>
             </Stack>
@@ -162,7 +166,12 @@ export function ProductDetailsView() {
                 {product.category}
               </Typography>
 
-              <Typography variant="h4">{product.title}</Typography>
+              <Stack direction="row" spacing={1} alignItems="center" flexWrap="wrap" useFlexGap>
+                <Typography variant="h4">{product.title}</Typography>
+                <Label variant="soft" color={getStatusColor(product.status)}>
+                  {getProductStatusLabel(product.status)}
+                </Label>
+              </Stack>
 
               <Stack direction="row" spacing={1} alignItems="center" flexWrap="wrap" useFlexGap>
                 <Rating size="small" value={productRating} readOnly />

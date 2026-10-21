@@ -13,7 +13,7 @@ import { getStatusColor } from 'src/utils/table-utils';
 
 import { USER_TYPE_OPTIONS } from './user-table-config';
 
-export function UserTableRow({ row, serialNumber, onViewRow, onEditRow }) {
+export function UserTableRow({ row, serialNumber, onViewRow, onEditRow, hideUserType = false, hideActions = false }) {
   const actions = [
     {
       key: 'view',
@@ -50,15 +50,17 @@ export function UserTableRow({ row, serialNumber, onViewRow, onEditRow }) {
 
       <TableCell sx={{ whiteSpace: 'nowrap' }}>{row.phone || 'N/A'}</TableCell>
 
-      <TableCell>
-        <Stack direction="row" spacing={0.75} flexWrap="wrap" useFlexGap>
-          {USER_TYPE_OPTIONS.filter((option) => (row.roles || []).includes(option.value)).map((option) => (
-            <Label key={option.value} variant="soft" color={option.color}>
-              {option.label}
-            </Label>
-          ))}
-        </Stack>
-      </TableCell>
+      {!hideUserType && (
+        <TableCell>
+          <Stack direction="row" spacing={0.75} flexWrap="wrap" useFlexGap>
+            {USER_TYPE_OPTIONS.filter((option) => (row.roles || []).includes(option.value)).map((option) => (
+              <Label key={option.value} variant="soft" color={option.color}>
+                {option.label}
+              </Label>
+            ))}
+          </Stack>
+        </TableCell>
+      )}
 
       <TableCell sx={{ whiteSpace: 'nowrap' }}>
         {row?.createdAt ? fDate(row.createdAt, formatStr.paramCase.date) : 'N/A'}
@@ -70,9 +72,11 @@ export function UserTableRow({ row, serialNumber, onViewRow, onEditRow }) {
         </Label>
       </TableCell>
 
-      <TableCell>
-        <GenericTableRowActions actions={actions} />
-      </TableCell>
+      {!hideActions && (
+        <TableCell>
+          <GenericTableRowActions actions={actions} />
+        </TableCell>
+      )}
     </TableRow>
   );
 }
@@ -82,4 +86,6 @@ UserTableRow.propTypes = {
   serialNumber: PropTypes.number.isRequired,
   onViewRow: PropTypes.func,
   onEditRow: PropTypes.func,
+  hideUserType: PropTypes.bool,
+  hideActions: PropTypes.bool,
 };

@@ -27,6 +27,7 @@ export const ORDER_STATUS_OPTIONS = [
   { value: 'processing', label: 'Processing', color: 'info' },
   { value: 'on-the-way', label: 'On the Way', color: 'primary' },
   { value: 'delivered', label: 'Delivered', color: 'success' },
+  { value: 'cancelled', label: 'Cancelled', color: 'error' },
 ];
 
 export const ORDER_STATUS_FLOW = [

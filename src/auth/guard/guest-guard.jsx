@@ -1,43 +1,33 @@
 import { useState, useEffect } from 'react';
+import { useSelector } from 'react-redux';
 
-import { useRouter, useSearchParams } from 'src/routes/hooks';
-
-import { CONFIG } from 'src/config-global';
+import { useRouter } from 'src/routes/hooks';
+import { paths } from 'src/routes/paths';
 
 import { SplashScreen } from 'src/components/loading-screen';
+import { PERMISSION_ADMIN } from 'src/hooks/use-app-role';
+import { selectUser } from 'src/store/slices/userSlice';
 
 import { useAuthContext } from '../hooks';
 
-// ----------------------------------------------------------------------
-
 export function GuestGuard({ children }) {
   const router = useRouter();
-
-  const searchParams = useSearchParams();
-
-  const { loading, authenticated } = useAuthContext();
-
+  const reduxUser = useSelector(selectUser);
+  const { loading } = useAuthContext();
   const [isChecking, setIsChecking] = useState(true);
 
-  const returnTo = searchParams.get('returnTo') || CONFIG.auth.redirectPath;
-
-  const checkPermissions = async () => {
+  useEffect(() => {
     if (loading) {
       return;
     }
 
-    if (authenticated) {
-      router.replace(returnTo);
+    if (reduxUser) {
+      router.replace(reduxUser.permission === PERMISSION_ADMIN ? paths.adminDashboard.root : paths.dashboard.root);
       return;
     }
 
     setIsChecking(false);
-  };
-
-  useEffect(() => {
-    checkPermissions();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [authenticated, loading]);
+  }, [loading, reduxUser, router]);
 
   if (isChecking) {
     return <SplashScreen />;

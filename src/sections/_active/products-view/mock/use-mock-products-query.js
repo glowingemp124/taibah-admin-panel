@@ -5,7 +5,7 @@ import { MOCK_PRODUCTS } from './products';
 // ----------------------------------------------------------------------
 
 export function useGetMockProductsQuery(params = {}) {
-  const { search = '', page = 0, limit = 10, category = '', sale = '', rating = '', sellerId } = params;
+  const { search = '', page = 0, limit = 10, category = '', sale = '', rating = '', status = '', sellerId } = params;
   const [revision, setRevision] = useState(0);
 
   return useMemo(() => {
@@ -53,6 +53,16 @@ export function useGetMockProductsQuery(params = {}) {
       rows = rows.filter((row) => Math.round(row.rating || 0) === Number(rating));
     }
 
+    const counts = rows.reduce((acc, row) => {
+      const key = row.status || 'active';
+      acc[key] = (acc[key] || 0) + 1;
+      return acc;
+    }, {});
+
+    if (status && status !== 'all') {
+      rows = rows.filter((row) => (row.status || 'active') === status);
+    }
+
     const start = page * limit;
     const pagedRows = rows.slice(start, start + limit);
 
@@ -62,6 +72,7 @@ export function useGetMockProductsQuery(params = {}) {
         total_length: rows.length,
         meta: {
           totalRecords: rows.length,
+          counts,
         },
       },
       isLoading: false,
@@ -69,5 +80,5 @@ export function useGetMockProductsQuery(params = {}) {
       error: undefined,
       refetch: () => setRevision((value) => value + 1),
     };
-  }, [search, page, limit, category, sale, rating, sellerId, revision]);
+  }, [search, page, limit, category, sale, rating, status, sellerId, revision]);
 }

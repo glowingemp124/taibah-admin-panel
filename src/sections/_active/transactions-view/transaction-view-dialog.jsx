@@ -19,7 +19,7 @@ import { getStatusColor } from 'src/utils/table-utils';
 
 import { getPaymentLabel, getTransactionStatusLabel } from './transaction-table-config';
 
-export function TransactionViewDialog({ transaction, open, onClose }) {
+export function TransactionViewDialog({ transaction, open, onClose, hideVendor = false }) {
   if (!transaction) return null;
 
   return (
@@ -87,18 +87,20 @@ export function TransactionViewDialog({ transaction, open, onClose }) {
             </Stack>
           </Box>
 
-          <Box>
-            <Typography variant="subtitle1" sx={{ mb: 1.5 }}>
-              Vendor
-            </Typography>
-            {transaction.vendor ? (
-              <ProductStoreCard company={transaction.vendor} />
-            ) : (
-              <Typography variant="body2" sx={{ color: 'text.secondary' }}>
-                No vendor details
+          {!hideVendor && (
+            <Box>
+              <Typography variant="subtitle1" sx={{ mb: 1.5 }}>
+                Vendor
               </Typography>
-            )}
-          </Box>
+              {transaction.vendor ? (
+                <ProductStoreCard company={transaction.vendor} />
+              ) : (
+                <Typography variant="body2" sx={{ color: 'text.secondary' }}>
+                  No vendor details
+                </Typography>
+              )}
+            </Box>
+          )}
 
           {transaction.note ? (
             <Stack spacing={0.5}>
@@ -133,4 +135,5 @@ TransactionViewDialog.propTypes = {
   transaction: PropTypes.object,
   open: PropTypes.bool,
   onClose: PropTypes.func,
+  hideVendor: PropTypes.bool,
 };

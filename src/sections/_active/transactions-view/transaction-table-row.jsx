@@ -15,7 +15,7 @@ import { getStatusColor } from 'src/utils/table-utils';
 
 import { getPaymentLabel, getTransactionStatusLabel } from './transaction-table-config';
 
-export function TransactionTableRow({ row, serialNumber, onViewRow }) {
+export function TransactionTableRow({ row, serialNumber, onViewRow, hideVendor = false }) {
   const actions = [
     {
       key: 'view',
@@ -47,23 +47,25 @@ export function TransactionTableRow({ row, serialNumber, onViewRow }) {
         </Stack>
       </TableCell>
 
-      <TableCell>
-        {row.vendor ? (
-          <Stack direction="row" spacing={1.25} alignItems="center">
-            <Avatar src={row.vendor.logo} alt={row.vendor.name} variant="rounded" sx={{ width: 32, height: 32 }} />
-            <Box sx={{ minWidth: 0 }}>
-              <Typography variant="body2" noWrap sx={{ maxWidth: 140 }}>
-                {row.vendor.name}
-              </Typography>
-              <Typography variant="caption" sx={{ color: 'text.secondary' }} noWrap>
-                {row.vendor.seller?.name || 'N/A'}
-              </Typography>
-            </Box>
-          </Stack>
-        ) : (
-          'N/A'
-        )}
-      </TableCell>
+      {!hideVendor && (
+        <TableCell>
+          {row.vendor ? (
+            <Stack direction="row" spacing={1.25} alignItems="center">
+              <Avatar src={row.vendor.logo} alt={row.vendor.name} variant="rounded" sx={{ width: 32, height: 32 }} />
+              <Box sx={{ minWidth: 0 }}>
+                <Typography variant="body2" noWrap sx={{ maxWidth: 140 }}>
+                  {row.vendor.name}
+                </Typography>
+                <Typography variant="caption" sx={{ color: 'text.secondary' }} noWrap>
+                  {row.vendor.seller?.name || 'N/A'}
+                </Typography>
+              </Box>
+            </Stack>
+          ) : (
+            'N/A'
+          )}
+        </TableCell>
+      )}
 
       <TableCell sx={{ whiteSpace: 'nowrap' }}>{getPaymentLabel(row.paymentMethod)}</TableCell>
 
@@ -90,4 +92,5 @@ TransactionTableRow.propTypes = {
   row: PropTypes.object.isRequired,
   serialNumber: PropTypes.number.isRequired,
   onViewRow: PropTypes.func,
+  hideVendor: PropTypes.bool,
 };

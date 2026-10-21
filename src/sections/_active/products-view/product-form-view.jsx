@@ -27,7 +27,7 @@ import { toast } from 'src/components/snackbar';
 import { fCurrency } from 'src/utils/format-number';
 
 import { MOCK_COMPANIES, upsertMockProduct } from './mock';
-import { CATEGORY_OPTIONS, getDiscountedPrice } from './product-table-config';
+import { CATEGORY_OPTIONS, getDiscountedPrice, PRODUCT_STATUS_EDIT_OPTIONS } from './product-table-config';
 
 const HEX_COLOR = /^#([0-9A-Fa-f]{3}|[0-9A-Fa-f]{6})$/;
 
@@ -58,6 +58,7 @@ const ProductSchema = zod
     companyId: zod.string().min(1, { message: 'Company is required!' }),
     colors: zod.array(zod.string()).min(1, { message: 'Add at least one color code!' }),
     quantity: zod.coerce.number().int({ message: 'Quantity must be a whole number!' }).min(0, { message: 'Quantity cannot be negative!' }),
+    status: zod.enum(['active', 'inactive'], { required_error: 'Status is required!' }),
   })
   .superRefine((data, ctx) => {
     if (Number(data.offPercent) > 0 && !data.discountEndsAt) {
@@ -156,9 +157,11 @@ function ColorCodesField() {
   );
 }
 
-export function ProductFormView({ currentProduct, missing = false }) {
+export function ProductFormView({ currentProduct, missing = false, sellerMode = false, sellerCompanyId = '' }) {
   const router = useRouter();
   const isEdit = !!currentProduct;
+  const appPaths = sellerMode ? paths.dashboard : paths.adminDashboard;
+  const lockedCompanyId = sellerMode ? sellerCompanyId || currentProduct?.company?._id || '' : '';
 
   const defaultValues = useMemo(
     () => ({
@@ -170,11 +173,12 @@ export function ProductFormView({ currentProduct, missing = false }) {
       offPercent: currentProduct?.offPercent || '',
       discountEndsAt: currentProduct?.discountEndsAt || null,
       category: currentProduct?.category || '',
-      companyId: currentProduct?.company?._id || '',
+      companyId: currentProduct?.company?._id || (sellerMode ? sellerCompanyId : '') || '',
       colors: currentProduct?.colors || [],
       quantity: currentProduct?.quantity ?? '',
+      status: currentProduct?.status || 'active',
     }),
-    [currentProduct]
+    [currentProduct, sellerMode, sellerCompanyId]
   );
 
   const methods = useForm({
@@ -210,7 +214,7 @@ export function ProductFormView({ currentProduct, missing = false }) {
     try {
       await new Promise((resolve) => setTimeout(resolve, 400));
 
-      const company = MOCK_COMPANIES.find((item) => item._id === data.companyId);
+      const company = MOCK_COMPANIES.find((item) => item._id === (sellerMode ? lockedCompanyId || data.companyId : data.companyId));
       const offPercent = Number(data.offPercent) || 0;
       const price = Number(data.price);
       const salePrice = getDiscountedPrice(price, offPercent);
@@ -233,24 +237,25 @@ export function ProductFormView({ currentProduct, missing = false }) {
         company,
         colors: data.colors,
         quantity: Number(data.quantity),
+        status: data.status,
       });
 
       toast.success(isEdit ? 'Product updated successfully!' : 'Product created successfully!');
-      router.push(paths.adminDashboard.products.details(saved._id));
+      router.push(appPaths.products.details(saved._id));
     } catch (error) {
       console.error(error);
       toast.error(isEdit ? 'Failed to update product' : 'Failed to create product');
     }
   });
 
-  const cancelHref = isEdit ? paths.adminDashboard.products.details(currentProduct._id) : paths.adminDashboard.products.root;
+  const cancelHref = isEdit ? appPaths.products.details(currentProduct._id) : appPaths.products.root;
 
   if (missing) {
     return (
       <Box sx={{ px: { xs: 2, md: 5 }, pb: 5, pt: 3 }}>
         <CustomBreadcrumbs
           heading="Edit product"
-          links={[{ name: 'Dashboard', href: paths.adminDashboard.root }, { name: 'Products', href: paths.adminDashboard.products.root }, { name: 'Edit' }]}
+          links={[{ name: 'Dashboard', href: appPaths.root }, { name: 'Products', href: appPaths.products.root }, { name: 'Edit' }]}
           sx={{ mb: { xs: 3, md: 5 } }}
         />
         <EmptyContent
@@ -258,7 +263,7 @@ export function ProductFormView({ currentProduct, missing = false }) {
           title="Product not found"
           description="This product does not exist or has been removed."
           action={
-            <Button component={RouterLink} href={paths.adminDashboard.products.root} variant="contained" color="primary">
+            <Button component={RouterLink} href={appPaths.products.root} variant="contained" color="primary">
               Back to products
             </Button>
           }
@@ -273,8 +278,8 @@ export function ProductFormView({ currentProduct, missing = false }) {
       <CustomBreadcrumbs
         heading={isEdit ? 'Edit product' : 'New product'}
         links={[
-          { name: 'Dashboard', href: paths.adminDashboard.root },
-          { name: 'Products', href: paths.adminDashboard.products.root },
+          { name: 'Dashboard', href: appPaths.root },
+          { name: 'Products', href: appPaths.products.root },
           { name: isEdit ? currentProduct.title : 'New product' },
         ]}
         sx={{ mb: { xs: 3, md: 5 } }}
@@ -322,15 +327,25 @@ export function ProductFormView({ currentProduct, missing = false }) {
                 ))}
               </Field.Select>
 
-              <Field.Select name="companyId" label="Company">
-                {MOCK_COMPANIES.map((company) => (
-                  <MenuItem key={company._id} value={company._id}>
-                    {company.name}
+              {!sellerMode && (
+                <Field.Select name="companyId" label="Company">
+                  {MOCK_COMPANIES.map((company) => (
+                    <MenuItem key={company._id} value={company._id}>
+                      {company.name}
+                    </MenuItem>
+                  ))}
+                </Field.Select>
+              )}
+
+              <Field.Text name="quantity" label="Quantity" type="number" />
+
+              <Field.Select name="status" label="Status">
+                {PRODUCT_STATUS_EDIT_OPTIONS.map((option) => (
+                  <MenuItem key={option.value} value={option.value}>
+                    {option.label}
                   </MenuItem>
                 ))}
               </Field.Select>
-
-              <Field.Text name="quantity" label="Quantity" type="number" />
             </Stack>
 
             <ColorCodesField />
@@ -353,4 +368,6 @@ export function ProductFormView({ currentProduct, missing = false }) {
 ProductFormView.propTypes = {
   currentProduct: PropTypes.object,
   missing: PropTypes.bool,
+  sellerMode: PropTypes.bool,
+  sellerCompanyId: PropTypes.string,
 };

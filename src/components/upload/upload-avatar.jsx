@@ -31,6 +31,8 @@ export function UploadAvatar({ sx, error, value, disabled, helperText, ...other 
       setPreview(value);
     } else if (value instanceof File) {
       setPreview(URL.createObjectURL(value));
+    } else if (value?.preview) {
+      setPreview(value.preview);
     }
   }, [value]);
 

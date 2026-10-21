@@ -81,6 +81,19 @@ export const MOCK_TICKETS = [
   }),
 ];
 
+export function createMockTicket({ userId, subject, message, priority = 'medium' }) {
+  const ticket = userTicket(userId, {
+    _id: `tkt-${Date.now()}`,
+    subject,
+    message,
+    priority,
+    status: 'open',
+    createdAt: new Date().toISOString(),
+  });
+  MOCK_TICKETS.unshift(ticket);
+  return ticket;
+}
+
 export function replyMockTicket(id, message) {
   const ticket = MOCK_TICKETS.find((row) => row._id === id);
   if (!ticket) return;

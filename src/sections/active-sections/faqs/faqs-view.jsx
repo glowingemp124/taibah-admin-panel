@@ -18,7 +18,7 @@ import IconButton from '@mui/material/IconButton';
 import Stack from '@mui/material/Stack';
 import Typography from '@mui/material/Typography';
 
-import { paths } from 'src/routes/paths';
+import { useAppRole } from 'src/hooks/use-app-role';
 
 import { _faqs } from 'src/_mock';
 
@@ -95,7 +95,9 @@ function AddFaqDialog({ open, onClose, onSubmit }) {
 
 // ----------------------------------------------------------------------
 
-export function FaqsView() {
+export function FaqsView({ readOnly = false }) {
+  const { isSeller, appPaths } = useAppRole();
+  const isReadOnly = readOnly || isSeller;
   const addDialog = useBoolean();
   const confirmDelete = useBoolean();
 
@@ -164,20 +166,24 @@ export function FaqsView() {
       <Box sx={{ px: { xs: 2, md: 5 }, pb: 5, pt: 3, display: 'flex', flexDirection: 'column' }}>
         <CustomBreadcrumbs
           heading="FAQs"
-          links={[{ name: 'Dashboard', href: paths.adminDashboard.root }, { name: 'FAQs' }]}
+          links={[{ name: 'Dashboard', href: appPaths.root }, { name: 'FAQs' }]}
           action={
-            <Button variant="contained" color="primary" startIcon={<Iconify icon="mingcute:add-line" />} onClick={addDialog.onTrue}>
-              Add FAQ
-            </Button>
+            isReadOnly ? null : (
+              <Button variant="contained" color="primary" startIcon={<Iconify icon="mingcute:add-line" />} onClick={addDialog.onTrue}>
+                Add FAQ
+              </Button>
+            )
           }
           sx={{ mb: { xs: 3, md: 5 } }}
         />
 
         <Box>
           <Stack spacing={1.5} sx={{ mb: 3 }}>
-            <Typography variant="h5">Manage frequently asked questions</Typography>
+            <Typography variant="h5">{isReadOnly ? 'Frequently asked questions' : 'Manage frequently asked questions'}</Typography>
             <Typography variant="body2" sx={{ color: 'text.secondary' }}>
-              Add new entries from the top-right action and remove outdated FAQs directly from the list.
+              {isReadOnly
+                ? 'Browse answers to common questions about Taibah Market.'
+                : 'Add new entries from the top-right action and remove outdated FAQs directly from the list.'}
             </Typography>
           </Stack>
 
@@ -194,16 +200,18 @@ export function FaqsView() {
                         <Typography variant="subtitle1">{faq.heading}</Typography>
                       </Box>
 
-                      <IconButton
-                        color="error"
-                        onClick={(event) => {
-                          event.stopPropagation();
-                          handleAskDelete(faq);
-                        }}
-                        onFocusCapture={(event) => event.stopPropagation()}
-                      >
-                        <Iconify icon="solar:trash-bin-trash-bold" />
-                      </IconButton>
+                      {!isReadOnly && (
+                        <IconButton
+                          color="error"
+                          onClick={(event) => {
+                            event.stopPropagation();
+                            handleAskDelete(faq);
+                          }}
+                          onFocusCapture={(event) => event.stopPropagation()}
+                        >
+                          <Iconify icon="solar:trash-bin-trash-bold" />
+                        </IconButton>
+                      )}
                     </Stack>
                   </AccordionSummary>
 
@@ -227,8 +235,9 @@ export function FaqsView() {
         </Box>
       </Box>
 
-      <AddFaqDialog open={addDialog.value} onClose={addDialog.onFalse} onSubmit={handleAddFaq} />
+      {!isReadOnly && <AddFaqDialog open={addDialog.value} onClose={addDialog.onFalse} onSubmit={handleAddFaq} />}
 
+      {!isReadOnly && (
       <ConfirmDialog
         open={confirmDelete.value}
         onClose={handleCloseDeleteDialog}
@@ -244,6 +253,7 @@ export function FaqsView() {
           </Button>
         }
       />
+      )}
     </>
   );
 }

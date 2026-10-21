@@ -17,18 +17,21 @@ export function RHFDatePicker({ name, slotProps, ...other }) {
       control={control}
       render={({ field, fieldState: { error } }) => (
         <DatePicker
-          {...field}
-          value={dayjs(field.value)}
-          onChange={(newValue) => field.onChange(dayjs(newValue).format())}
+          name={field.name}
+          value={field.value ? dayjs(field.value) : null}
+          onChange={(newValue) => field.onChange(newValue ? dayjs(newValue).format() : null)}
+          onClose={field.onBlur}
           format={formatStr.split.date}
           slotProps={{
+            ...slotProps,
             textField: {
               fullWidth: true,
+              inputRef: field.ref,
+              onBlur: field.onBlur,
+              ...slotProps?.textField,
               error: !!error,
               helperText: error?.message ?? slotProps?.textField?.helperText,
-              ...slotProps?.textField,
             },
-            ...slotProps,
           }}
           {...other}
         />

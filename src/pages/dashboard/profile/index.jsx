@@ -1,0 +1,18 @@
+import { Helmet } from 'react-helmet-async';
+
+import { CONFIG } from 'src/config-global';
+import { SellerProfileView } from 'src/sections/_active/seller-profile/seller-profile-view';
+
+const metadata = { title: `Profile | ${CONFIG.site.name}` };
+
+export default function Page() {
+  return (
+    <>
+      <Helmet>
+        <title> {metadata.title}</title>
+      </Helmet>
+
+      <SellerProfileView />
+    </>
+  );
+}

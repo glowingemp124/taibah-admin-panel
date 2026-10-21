@@ -115,6 +115,7 @@ export const MOCK_PRODUCTS = [
     rating: 5,
     totalReviews: 1000,
     reviews: janamazReviews,
+    status: 'active',
     createdAt: '2026-08-01T09:15:00.000Z',
   },
   {
@@ -137,6 +138,7 @@ export const MOCK_PRODUCTS = [
     rating: 5,
     totalReviews: 420,
     reviews: janamazReviews,
+    status: 'active',
     createdAt: '2026-08-10T11:40:00.000Z',
   },
   {
@@ -159,6 +161,7 @@ export const MOCK_PRODUCTS = [
     rating: 5,
     totalReviews: 188,
     reviews: janamazReviews.slice(0, 2),
+    status: 'inactive',
     createdAt: '2026-08-18T14:05:00.000Z',
   },
   {
@@ -181,6 +184,7 @@ export const MOCK_PRODUCTS = [
     rating: 5,
     totalReviews: 96,
     reviews: janamazReviews.slice(0, 1),
+    status: 'active',
     createdAt: '2026-09-02T08:30:00.000Z',
   },
   {
@@ -203,6 +207,7 @@ export const MOCK_PRODUCTS = [
     rating: 5,
     totalReviews: 64,
     reviews: janamazReviews.slice(1, 2),
+    status: 'active',
     createdAt: '2026-09-08T16:20:00.000Z',
   },
   {
@@ -225,6 +230,7 @@ export const MOCK_PRODUCTS = [
     rating: 4,
     totalReviews: 51,
     reviews: [],
+    status: 'active',
     createdAt: '2026-09-14T10:10:00.000Z',
   },
   {
@@ -247,6 +253,7 @@ export const MOCK_PRODUCTS = [
     rating: 5,
     totalReviews: 210,
     reviews: janamazReviews.slice(0, 2),
+    status: 'active',
     createdAt: '2026-09-20T13:45:00.000Z',
   },
   {
@@ -269,6 +276,7 @@ export const MOCK_PRODUCTS = [
     rating: 4,
     totalReviews: 132,
     reviews: janamazReviews.slice(2),
+    status: 'inactive',
     createdAt: '2026-09-28T09:00:00.000Z',
   },
   {
@@ -291,6 +299,7 @@ export const MOCK_PRODUCTS = [
     rating: 5,
     totalReviews: 77,
     reviews: [],
+    status: 'active',
     createdAt: '2026-10-02T12:25:00.000Z',
   },
   {
@@ -313,9 +322,17 @@ export const MOCK_PRODUCTS = [
     rating: 5,
     totalReviews: 40,
     reviews: janamazReviews.slice(0, 1),
+    status: 'active',
     createdAt: '2026-10-08T15:50:00.000Z',
   },
 ];
+
+export function updateMockCompany(id, patch) {
+  const company = MOCK_COMPANIES.find((row) => row._id === id);
+  if (!company) return null;
+  Object.assign(company, patch);
+  return company;
+}
 
 export function upsertMockProduct(product) {
   if (product._id) {
@@ -334,6 +351,7 @@ export function upsertMockProduct(product) {
     soldCount: product.soldCount || 0,
     favoriteCount: product.favoriteCount || 0,
     reviews: product.reviews || [],
+    status: product.status || 'active',
     createdAt: new Date().toISOString(),
   };
 

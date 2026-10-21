@@ -40,7 +40,7 @@ function IllustrationPanel({ sx, ...other }) {
   );
 }
 
-export function AuthBrandLayout({ children }) {
+export function AuthBrandLayout({ children, contentMaxWidth = 420, constrainInputs = true, wide = false }) {
   const { currentLang } = useTranslate();
 
   const lightTheme = createTheme(currentLang?.systemValue, {
@@ -53,8 +53,9 @@ export function AuthBrandLayout({ children }) {
       <Box
         data-mui-color-scheme="light"
         sx={{
-          minHeight: '100vh',
+          height: '100vh',
           display: 'flex',
+          overflow: 'hidden',
           p: { xs: 1.5, md: 2.5 },
           bgcolor: '#D8D8D4',
           color: 'text.primary',
@@ -63,7 +64,9 @@ export function AuthBrandLayout({ children }) {
         <Box
           sx={{
             flex: 1,
+            minWidth: 0,
             minHeight: 0,
+            height: 1,
             display: 'flex',
             overflow: 'hidden',
             flexDirection: { xs: 'column', lg: 'row' },
@@ -75,7 +78,11 @@ export function AuthBrandLayout({ children }) {
           <IllustrationPanel
             sx={{
               display: { xs: 'none', lg: 'block' },
-              flex: 1,
+              flex: { lg: wide ? '0 0 40%' : '0 0 50%' },
+              width: { lg: wide ? '40%' : '50%' },
+              minWidth: 0,
+              minHeight: 0,
+              height: 1,
               alignSelf: 'stretch',
             }}
           />
@@ -83,10 +90,16 @@ export function AuthBrandLayout({ children }) {
           <Box
             sx={{
               position: 'relative',
-              flex: { xs: '1 1 auto', lg: '0 0 44%' },
+              flex: { xs: '1 1 auto', lg: wide ? '0 0 60%' : '0 0 50%' },
+              width: { lg: wide ? '60%' : '50%' },
+              maxWidth: { xs: 1, lg: wide ? '60%' : '50%' },
+              minWidth: 0,
+              minHeight: 0,
+              height: 1,
               display: 'flex',
               flexDirection: 'column',
-              px: { xs: 3, sm: 6, md: 8 },
+              overflowY: 'auto',
+              px: { xs: 3, sm: 5, md: 6 },
               py: { xs: 3.5, md: 5 },
               background: 'linear-gradient(165deg, #F8F5ED 0%, #F3EDDC 48%, #EDE3C4 100%)',
             }}
@@ -94,33 +107,37 @@ export function AuthBrandLayout({ children }) {
             <Box
               sx={{
                 width: 1,
-                maxWidth: 420,
+                maxWidth: wide ? 1 : contentMaxWidth,
                 mx: 'auto',
-                my: 'auto',
-                py: { xs: 4, md: 6 },
+                my: { xs: 2, lg: 'auto' },
+                py: { xs: 2, md: 3 },
                 '& .MuiOutlinedInput-root': {
                   borderRadius: 2,
-                  height: 56,
-                  alignItems: 'center',
+                  ...(constrainInputs && {
+                    height: 56,
+                    alignItems: 'center',
+                  }),
                 },
-                '& .MuiOutlinedInput-input': {
-                  height: 54,
-                  boxSizing: 'border-box',
-                  paddingTop: '0 !important',
-                  paddingBottom: '0 !important',
-                  lineHeight: '54px',
-                },
-                '& .MuiInputAdornment-root': {
-                  height: 54,
-                  maxHeight: 'none',
-                  margin: 0,
-                },
-                '& .MuiInputLabel-outlined': {
-                  transform: 'translate(14px, 16px) scale(1)',
-                },
-                '& .MuiInputLabel-outlined.MuiInputLabel-shrink': {
-                  transform: 'translate(14px, -9px) scale(0.75)',
-                },
+                ...(constrainInputs && {
+                  '& .MuiOutlinedInput-input': {
+                    height: 54,
+                    boxSizing: 'border-box',
+                    paddingTop: '0 !important',
+                    paddingBottom: '0 !important',
+                    lineHeight: '54px',
+                  },
+                  '& .MuiInputAdornment-root': {
+                    height: 54,
+                    maxHeight: 'none',
+                    margin: 0,
+                  },
+                  '& .MuiInputLabel-outlined': {
+                    transform: 'translate(14px, 16px) scale(1)',
+                  },
+                  '& .MuiInputLabel-outlined.MuiInputLabel-shrink': {
+                    transform: 'translate(14px, -9px) scale(0.75)',
+                  },
+                }),
               }}
             >
               <Box sx={{ mb: 5 }}>

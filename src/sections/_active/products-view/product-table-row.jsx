@@ -11,9 +11,10 @@ import Typography from '@mui/material/Typography';
 import { GenericTableRowActions } from 'src/components/generic-table/table-row-actions';
 import { Label } from 'src/components/label';
 import { fCurrency, fNumber, fShortenNumber } from 'src/utils/format-number';
+import { getStatusColor } from 'src/utils/table-utils';
 
 import { getPrimaryImage } from './mock';
-import { getDiscountedPrice } from './product-table-config';
+import { getDiscountedPrice, getProductStatusLabel } from './product-table-config';
 
 export function ProductTableRow({ row, serialNumber, onViewRow, onEditRow, onDeleteRow }) {
   const salePrice = getDiscountedPrice(row.price, row.offPercent) || row.price;
@@ -94,6 +95,12 @@ export function ProductTableRow({ row, serialNumber, onViewRow, onEditRow, onDel
       <TableCell sx={{ whiteSpace: 'nowrap' }}>{fNumber(row.quantity ?? 0)}</TableCell>
 
       <TableCell sx={{ whiteSpace: 'nowrap' }}>{fNumber(row.favoriteCount ?? 0)}</TableCell>
+
+      <TableCell>
+        <Label variant="soft" color={getStatusColor(row.status)}>
+          {getProductStatusLabel(row.status)}
+        </Label>
+      </TableCell>
 
       <TableCell>
         <GenericTableRowActions actions={actions} />

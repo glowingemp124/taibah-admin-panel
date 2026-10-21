@@ -17,8 +17,17 @@ export const TABLE_HEAD = [
   { id: 'reviews', label: 'Reviews', width: 130 },
   { id: 'quantity', label: 'Quantity', width: 110 },
   { id: 'favorite', label: 'Favorite', width: 110 },
+  { id: 'status', label: 'Status', width: 120 },
   { id: 'action', label: 'Action', width: 140 },
 ];
+
+export const PRODUCT_STATUS_OPTIONS = [
+  { value: 'all', label: 'All', color: 'default' },
+  { value: 'active', label: 'Active', color: 'success' },
+  { value: 'inactive', label: 'Inactive', color: 'error' },
+];
+
+export const PRODUCT_STATUS_EDIT_OPTIONS = PRODUCT_STATUS_OPTIONS.filter((option) => option.value !== 'all');
 
 export const CATEGORY_OPTIONS = [
   { value: 'Modest Fashion', label: 'Modest Fashion' },
@@ -61,6 +70,11 @@ export const RATING_FILTER_OPTIONS = [
 ];
 
 export const FILTER_FIELDS = [
+  createFilterField.status({
+    options: PRODUCT_STATUS_OPTIONS,
+    showCounts: true,
+  }),
+
   createFilterField.search({
     placeholder: 'Search products...',
   }),
@@ -95,7 +109,12 @@ export const DEFAULT_FILTERS = FILTER_FIELDS.reduce((acc, field) => {
   return acc;
 }, {});
 
+export const STATUS_FILTER_FIELD = FILTER_FIELDS.find((field) => field.type === 'status');
+
 export const TOOLBAR_FILTER_FIELDS = FILTER_FIELDS.filter((field) => field.type !== 'status');
+
+export const getProductStatusLabel = (value) =>
+  PRODUCT_STATUS_OPTIONS.find((option) => option.value === value)?.label || value || 'N/A';
 
 export const getColorLabel = (value) => COLOR_OPTIONS.find((option) => option.value === value)?.label || value;
 

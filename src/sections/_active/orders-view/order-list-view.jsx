@@ -25,7 +25,8 @@ import { DEFAULT_FILTERS, FILTER_FIELDS, STATUS_FILTER_FIELD, TABLE_HEAD, TABLE_
 import { OrderTableRow } from './order-table-row';
 import { OrderViewDialog } from './order-view-dialog';
 
-export function OrderListView({ embedded = false, userId, orderScope = 'customer' }) {
+export function OrderListView({ embedded = false, userId, orderScope = 'customer', sellerMode = false }) {
+  const appPaths = sellerMode ? paths.dashboard : paths.adminDashboard;
   const transformFilters = useCallback(
     (params) => (userId ? { ...params, userId, orderScope } : params),
     [userId, orderScope]
@@ -95,6 +96,7 @@ export function OrderListView({ embedded = false, userId, orderScope = 'customer
   const isBusy = isLoading || isFetching;
   const notFound = !isBusy && dataList.length === 0;
   const isDense = TABLE_OPTIONS.dense;
+  const tableHead = sellerMode ? TABLE_HEAD.filter((column) => column.id !== 'vendor') : TABLE_HEAD;
 
   const getStatusCount = useCallback(
     (status) => {
@@ -148,8 +150,8 @@ export function OrderListView({ embedded = false, userId, orderScope = 'customer
             )}
 
             <Scrollbar>
-              <Table size={isDense ? 'small' : 'medium'} sx={{ minWidth: 1180 }}>
-                <TableHeadCustom headLabel={TABLE_HEAD} rowCount={dataList.length} />
+              <Table size={isDense ? 'small' : 'medium'} sx={{ minWidth: sellerMode ? 980 : 1180 }}>
+                <TableHeadCustom headLabel={tableHead} rowCount={dataList.length} />
 
                 <TableBody>
                   {!isBusy &&
@@ -158,6 +160,7 @@ export function OrderListView({ embedded = false, userId, orderScope = 'customer
                         key={row._id}
                         row={row}
                         serialNumber={calculateSerialNumber(currentPage, itemsPerPage, index)}
+                        hideVendor={sellerMode}
                         onViewRow={() => handleOpenView(row)}
                         onEditRow={() => handleOpenEdit(row)}
                       />
@@ -183,14 +186,14 @@ export function OrderListView({ embedded = false, userId, orderScope = 'customer
         <Box sx={{ px: { xs: 2, md: 5 }, pb: 5, pt: 3, display: 'flex', flexDirection: 'column' }}>
           <CustomBreadcrumbs
             heading="Orders"
-            links={[{ name: 'Dashboard', href: paths.adminDashboard.root }, { name: 'Orders' }]}
+            links={[{ name: 'Dashboard', href: appPaths.root }, { name: 'Orders' }]}
             sx={{ mb: { xs: 3, md: 5 } }}
           />
           {table}
         </Box>
       )}
 
-      <OrderViewDialog order={currentOrder} open={viewDialog.value} onClose={handleCloseView} />
+      <OrderViewDialog order={currentOrder} open={viewDialog.value} onClose={handleCloseView} hideVendor={sellerMode} />
 
       <OrderEditDialog currentOrder={formDialog.value ? currentOrder : null} open={formDialog.value} onClose={handleCloseForm} onSuccess={refetch} />
     </>
@@ -201,4 +204,5 @@ OrderListView.propTypes = {
   embedded: PropTypes.bool,
   userId: PropTypes.string,
   orderScope: PropTypes.oneOf(['customer', 'vendor']),
+  sellerMode: PropTypes.bool,
 };

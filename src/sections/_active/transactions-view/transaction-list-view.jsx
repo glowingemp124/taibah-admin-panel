@@ -24,8 +24,16 @@ import { DEFAULT_FILTERS, FILTER_FIELDS, STATUS_FILTER_FIELD, TABLE_HEAD, TABLE_
 import { TransactionTableRow } from './transaction-table-row';
 import { TransactionViewDialog } from './transaction-view-dialog';
 
-export function TransactionListView({ embedded = false, userId }) {
-  const transformFilters = useCallback((params) => (userId ? { ...params, userId } : params), [userId]);
+export function TransactionListView({ embedded = false, userId, sellerId, sellerMode = false }) {
+  const appPaths = sellerMode ? paths.dashboard : paths.adminDashboard;
+  const transformFilters = useCallback(
+    (params) => ({
+      ...params,
+      ...(userId ? { userId } : {}),
+      ...(sellerId ? { sellerId } : {}),
+    }),
+    [userId, sellerId]
+  );
 
   const {
     filters,
@@ -72,6 +80,7 @@ export function TransactionListView({ embedded = false, userId }) {
   const isBusy = isLoading || isFetching;
   const notFound = !isBusy && dataList.length === 0;
   const isDense = TABLE_OPTIONS.dense;
+  const tableHead = sellerMode ? TABLE_HEAD.filter((column) => column.id !== 'vendor') : TABLE_HEAD;
 
   const getStatusCount = useCallback(
     (status) => {
@@ -125,8 +134,8 @@ export function TransactionListView({ embedded = false, userId }) {
             )}
 
             <Scrollbar>
-              <Table size={isDense ? 'small' : 'medium'} sx={{ minWidth: 1180 }}>
-                <TableHeadCustom headLabel={TABLE_HEAD} rowCount={dataList.length} />
+              <Table size={isDense ? 'small' : 'medium'} sx={{ minWidth: sellerMode ? 980 : 1180 }}>
+                <TableHeadCustom headLabel={tableHead} rowCount={dataList.length} />
 
                 <TableBody>
                   {!isBusy &&
@@ -135,6 +144,7 @@ export function TransactionListView({ embedded = false, userId }) {
                         key={row._id}
                         row={row}
                         serialNumber={calculateSerialNumber(currentPage, itemsPerPage, index)}
+                        hideVendor={sellerMode}
                         onViewRow={() => handleOpenView(row)}
                       />
                     ))}
@@ -159,14 +169,19 @@ export function TransactionListView({ embedded = false, userId }) {
         <Box sx={{ px: { xs: 2, md: 5 }, pb: 5, pt: 3, display: 'flex', flexDirection: 'column' }}>
           <CustomBreadcrumbs
             heading="Transactions"
-            links={[{ name: 'Dashboard', href: paths.adminDashboard.root }, { name: 'Transactions' }]}
+            links={[{ name: 'Dashboard', href: appPaths.root }, { name: 'Transactions' }]}
             sx={{ mb: { xs: 3, md: 5 } }}
           />
           {table}
         </Box>
       )}
 
-      <TransactionViewDialog transaction={currentTransaction} open={viewDialog.value} onClose={handleCloseView} />
+      <TransactionViewDialog
+        transaction={currentTransaction}
+        open={viewDialog.value}
+        onClose={handleCloseView}
+        hideVendor={sellerMode}
+      />
     </>
   );
 }
@@ -174,4 +189,6 @@ export function TransactionListView({ embedded = false, userId }) {
 TransactionListView.propTypes = {
   embedded: PropTypes.bool,
   userId: PropTypes.string,
+  sellerId: PropTypes.string,
+  sellerMode: PropTypes.bool,
 };

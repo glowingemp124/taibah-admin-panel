@@ -1,4 +1,5 @@
 import { zodResolver } from '@hookform/resolvers/zod';
+import PropTypes from 'prop-types';
 import { useState } from 'react';
 import { useForm } from 'react-hook-form';
 import { toast } from 'src/components/snackbar';
@@ -17,42 +18,49 @@ import { useRouter } from 'src/routes/hooks';
 import { paths } from 'src/routes/paths';
 
 import { useBoolean } from 'src/hooks/use-boolean';
+import { PERMISSION_ADMIN, PERMISSION_SELLER } from 'src/hooks/use-app-role';
 
 import { Field, Form } from 'src/components/hook-form';
 import { Iconify } from 'src/components/iconify';
 
 import { useDispatch } from 'react-redux';
-// import { useAdminLoginMutation, useLoginMutation } from 'src/store/Reducer/auth';
 import { setUser } from 'src/store/slices/userSlice';
 import { handleApiError } from 'src/utils/errorHandler';
 import { getDeviceType } from 'src/utils/getDeviceType';
+import { MOCK_USERS } from 'src/sections/_active/users-view/mock';
+import { MOCK_COMPANIES, updateMockCompany } from 'src/sections/_active/products-view/mock';
+import { authenticateSeller } from 'src/sections/auth/jwt/seller-signup';
 
-// ----------------------------------------------------------------------
-
-export const SignInSchema = zod.object({
+const SignInSchema = zod.object({
   email: zod.string().min(1, { message: 'Email is required!' }).email({ message: 'Email must be a valid email address!' }),
   password: zod.string().min(1, { message: 'Password is required!' }).min(6, { message: 'Password must be at least 6 characters!' }),
 });
 
-// ----------------------------------------------------------------------
+const SELLER_USER = MOCK_USERS.find((row) => row._id === 'usr-002');
+const SELLER_COMPANY = MOCK_COMPANIES.find((row) => row.seller?._id === 'usr-002');
 
-// Mock login function
 const mockLogin = async (payload) => {
-  // Simulate API delay
   await new Promise((resolve) => setTimeout(resolve, 1000));
 
-  // Mock response data
-  const mockResponse = {
+  const isAdmin = payload.userType === 'admin';
+  const seller = SELLER_USER;
+  const sellerProfile = isAdmin ? null : authenticateSeller({ email: payload.email, password: payload.password });
+  const sellerName = sellerProfile
+    ? `${sellerProfile.firstName || ''} ${sellerProfile.lastName || ''}`.trim()
+    : seller?.name || 'Omar Al-Farsi';
+
+  return {
     message: 'Login success',
     data: {
       basicInfo: {
-        _id: '692c5523e446ec147ce153aa',
-        profileIcon: 'https://dummybucket.s3.us-east-1.amazonaws.com/noimage.png',
-        name: payload.userType === 'admin' ? 'Admin User' : 'Suheer',
+        _id: isAdmin ? 'admin-001' : seller?._id || 'usr-002',
+        profileIcon: isAdmin ? 'https://dummybucket.s3.us-east-1.amazonaws.com/noimage.png' : seller?.avatarUrl,
+        name: isAdmin ? 'Admin User' : sellerName,
         email: payload.email,
-        phoneNumber: null,
+        phoneNumber: isAdmin ? null : sellerProfile?.phone || seller?.phone,
         language: 'en',
       },
+      sellerProfile,
       accountState: {
         userType: payload.userType,
         status: 'active',
@@ -65,46 +73,22 @@ const mockLogin = async (payload) => {
         timezone: payload.timezone,
         createdAt: new Date().toISOString(),
         updatedAt: new Date().toISOString(),
-        __v: 0,
       },
-      otpInfo: {
-        emailOtp: {
-          otp: '835987',
-          otpUsed: false,
-          otpRequestCount: 1,
-          otpRequestTimestamp: new Date().toISOString(),
-          otpExpires: new Date(Date.now() + 10 * 60 * 1000).toISOString(),
-        },
-        phoneNumberOtp: {
-          otp: '',
-          otpUsed: false,
-          otpRequestCount: 0,
-          otpRequestTimestamp: new Date().toISOString(),
-        },
-      },
-      token: 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJfaWQiOiI2OTJjNTUyM2U0NDZlYzE0N2NlMTUzYWEiLCJpYXQiOjE3NjUxNzM1MjB9.WpcTqWkmgAVpx-mn9KNvNIPjPlwO6aONXKJvu30AvZU',
+      token: 'mock-token',
     },
   };
-
-  return mockResponse;
 };
 
-// ----------------------------------------------------------------------
-
-export function JwtSignInView() {
+export function JwtSignInView({ variant = 'seller' }) {
   const router = useRouter();
   const dispatch = useDispatch();
-
-  // API hooks commented out
-  // const [login] = useLoginMutation();
-  // const [adminLogin] = useAdminLoginMutation();
+  const isAdmin = variant === 'admin';
 
   const [errorMsg, setErrorMsg] = useState('');
-
   const password = useBoolean();
 
   const defaultValues = {
-    email: 'admin@taibah.com',
+    email: isAdmin ? 'admin@taibah.com' : 'user@taibah.com',
     password: 'PassWord@2',
   };
 
@@ -119,10 +103,6 @@ export function JwtSignInView() {
     formState: { isSubmitting },
   } = methods;
 
-  const goTo = () => {
-    router.push(paths.adminDashboard.root);
-  };
-
   const onSubmit = handleSubmit(async (data) => {
     const deviceType = getDeviceType();
 
@@ -130,24 +110,13 @@ export function JwtSignInView() {
       email: data.email.trim().toLowerCase(),
       password: data.password,
       timezone: Intl.DateTimeFormat().resolvedOptions().timeZone,
-      userType: 'admin',
+      userType: isAdmin ? 'admin' : 'seller',
       deviceType,
       deviceId: '123',
     };
 
     try {
-      // API calls commented out - using mock data instead
-      // let response;
-      // if (payload.userType === 'admin') {
-      //   response = await adminLogin(payload).unwrap();
-      // } else {
-      //   response = await login(payload).unwrap();
-      // }
-
-      // Using mock login function
       const response = await mockLogin(payload);
-
-      console.log('Login Response:', response);
 
       if (response.error) {
         return toast.error(response.error.data?.message);
@@ -155,97 +124,59 @@ export function JwtSignInView() {
 
       if (!response.data) {
         toast.error('Login failed: No user data received');
-        router.push('/');
         return null;
       }
 
       const user = response.data;
-
-      if (!user) {
-        return router.push('/404');
-      }
 
       if (!user?.accountState?.status) {
         toast.error('Your account is inactive. Please contact support.');
         return null;
       }
 
-      const permission = 1;
-
       const UpdatedUserData = {
         ...user,
-        permission,
+        permission: isAdmin ? PERMISSION_ADMIN : PERMISSION_SELLER,
+        sellerId: isAdmin ? null : 'usr-002',
+        companyId: isAdmin ? null : SELLER_COMPANY?._id || 'co-001',
+        sellerProfile: isAdmin ? null : user.sellerProfile,
       };
 
-      console.log('Updated User Data', UpdatedUserData);
+      if (!isAdmin && UpdatedUserData.sellerProfile?.storeName && SELLER_COMPANY?._id) {
+        updateMockCompany(SELLER_COMPANY._id, {
+          name: UpdatedUserData.sellerProfile.storeName,
+          description: UpdatedUserData.sellerProfile.storeDescription || SELLER_COMPANY.description,
+        });
+      }
 
       dispatch(setUser(UpdatedUserData));
-      goTo();
-
+      router.push(isAdmin ? paths.adminDashboard.root : paths.dashboard.root);
       reset();
-      // toast.success('Login successful!');
     } catch (error) {
       setErrorMsg(typeof error === 'string' ? error : error.message);
       handleApiError(error);
     }
   });
 
-  const renderHead = (
-    <Stack spacing={0.75} sx={{ mb: 4 }}>
-      <Typography variant="h3" sx={{ lineHeight: 1.15 }}>
-        Sign in
-      </Typography>
-      <Typography variant="body2" sx={{ color: 'text.secondary' }}>
-        Sign in to manage Taibah Market
-      </Typography>
-    </Stack>
-  );
-
-  const renderForm = (
-    <Stack spacing={3}>
-      <Field.Text name="email" label="Email address" placeholder=" " InputLabelProps={{ shrink: true }} />
-
-      <Stack spacing={1.5}>
-        <Field.Text
-          name="password"
-          label="Password"
-          placeholder=" "
-          type={password.value ? 'text' : 'password'}
-          InputLabelProps={{ shrink: true }}
-          InputProps={{
-            endAdornment: (
-              <InputAdornment position="end">
-                <IconButton onClick={password.onToggle} edge="end">
-                  <Iconify icon={password.value ? 'solar:eye-bold' : 'solar:eye-closed-bold'} />
-                </IconButton>
-              </InputAdornment>
-            ),
-          }}
-        />
-
-        <Link component={RouterLink} href={paths.auth.jwt.forgetPassword} variant="body2" color="primary" underline="always" sx={{ alignSelf: 'flex-start', fontWeight: 600 }}>
-          Forgot password?
-        </Link>
-      </Stack>
-
-      <LoadingButton
-        fullWidth
-        color="primary"
-        size="large"
-        type="submit"
-        variant="contained"
-        loading={isSubmitting}
-        loadingIndicator="Sign in..."
-        sx={{ mt: 1, height: 52, borderRadius: 999, fontWeight: 700 }}
-      >
-        Sign in
-      </LoadingButton>
-    </Stack>
-  );
-
   return (
     <>
-      {renderHead}
+      <Stack spacing={0.75} sx={{ mb: 4 }}>
+        <Typography variant="h3" sx={{ lineHeight: 1.15 }}>
+          Sign in
+        </Typography>
+        <Typography variant="body2" sx={{ color: 'text.secondary' }}>
+          {isAdmin ? (
+            'Sign in to the Taibah admin dashboard'
+          ) : (
+            <>
+              Sign in to manage your store.{' '}
+              <Link component={RouterLink} href={paths.auth.sellerSignUp} underline="always" color="text.primary">
+                Create a seller account
+              </Link>
+            </>
+          )}
+        </Typography>
+      </Stack>
 
       {!!errorMsg && (
         <Alert severity="error" sx={{ mb: 3 }}>
@@ -254,8 +185,50 @@ export function JwtSignInView() {
       )}
 
       <Form methods={methods} onSubmit={onSubmit}>
-        {renderForm}
+        <Stack spacing={3}>
+          <Field.Text name="email" label="Email address" placeholder=" " InputLabelProps={{ shrink: true }} />
+
+          <Stack spacing={1.5}>
+            <Field.Text
+              name="password"
+              label="Password"
+              placeholder=" "
+              type={password.value ? 'text' : 'password'}
+              InputLabelProps={{ shrink: true }}
+              InputProps={{
+                endAdornment: (
+                  <InputAdornment position="end">
+                    <IconButton onClick={password.onToggle} edge="end">
+                      <Iconify icon={password.value ? 'solar:eye-bold' : 'solar:eye-closed-bold'} />
+                    </IconButton>
+                  </InputAdornment>
+                ),
+              }}
+            />
+
+            <Link component={RouterLink} href={paths.auth.jwt.forgetPassword} variant="body2" color="primary" underline="always" sx={{ alignSelf: 'flex-start', fontWeight: 600 }}>
+              Forgot password?
+            </Link>
+          </Stack>
+
+          <LoadingButton
+            fullWidth
+            color="primary"
+            size="large"
+            type="submit"
+            variant="contained"
+            loading={isSubmitting}
+            loadingIndicator="Sign in..."
+            sx={{ mt: 1, height: 52, borderRadius: 999, fontWeight: 700 }}
+          >
+            Sign in
+          </LoadingButton>
+        </Stack>
       </Form>
     </>
   );
 }
+
+JwtSignInView.propTypes = {
+  variant: PropTypes.oneOf(['admin', 'seller']),
+};

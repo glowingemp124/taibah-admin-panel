@@ -48,9 +48,9 @@ export function DashboardLayout({ sx, children, data }) {
     if (user?.permission === 1) {
       return dashboardNavDataAdmin;
     }
-    // else if (user?.permission === 2) {
-    //   return dashboardNavData;
-    // }
+    if (user?.permission === 2) {
+      return dashboardNavData;
+    }
     return data?.nav ?? dashboardNavData;
   }, [user?.permission, data?.nav]);
 

@@ -4,8 +4,6 @@ import { CONFIG } from 'src/config-global';
 
 import { JwtSignInView } from 'src/sections/auth/jwt';
 
-// ----------------------------------------------------------------------
-
 const metadata = { title: `${CONFIG.site.name}` };
 
 export default function Page() {
@@ -15,7 +13,7 @@ export default function Page() {
         <title> {metadata.title}</title>
       </Helmet>
 
-      <JwtSignInView />
+      <JwtSignInView variant="seller" />
     </>
   );
 }

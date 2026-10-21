@@ -17,7 +17,7 @@ import { getStatusColor } from 'src/utils/table-utils';
 import { getOrderTotal, getOrderVendors } from './mock';
 import { getOrderStatusLabel, getPaymentLabel } from './order-table-config';
 
-export function OrderTableRow({ row, serialNumber, onViewRow, onEditRow }) {
+export function OrderTableRow({ row, serialNumber, onViewRow, onEditRow, hideVendor = false }) {
   const items = row.items || [];
   const firstTitle = items[0]?.title || 'N/A';
   const extraCount = Math.max(items.length - 1, 0);
@@ -77,24 +77,26 @@ export function OrderTableRow({ row, serialNumber, onViewRow, onEditRow }) {
         </Stack>
       </TableCell>
 
-      <TableCell>
-        {primaryVendor ? (
-          <Stack direction="row" spacing={1.25} alignItems="center">
-            <Avatar src={primaryVendor.logo} alt={primaryVendor.name} variant="rounded" sx={{ width: 32, height: 32 }} />
-            <Box sx={{ minWidth: 0 }}>
-              <Typography variant="body2" noWrap sx={{ maxWidth: 160 }}>
-                {primaryVendor.name}
-              </Typography>
-              <Typography variant="caption" sx={{ color: 'text.secondary' }} noWrap>
-                {primaryVendor.seller?.name || 'N/A'}
-                {vendors.length > 1 ? ` +${vendors.length - 1}` : ''}
-              </Typography>
-            </Box>
-          </Stack>
-        ) : (
-          'N/A'
-        )}
-      </TableCell>
+      {!hideVendor && (
+        <TableCell>
+          {primaryVendor ? (
+            <Stack direction="row" spacing={1.25} alignItems="center">
+              <Avatar src={primaryVendor.logo} alt={primaryVendor.name} variant="rounded" sx={{ width: 32, height: 32 }} />
+              <Box sx={{ minWidth: 0 }}>
+                <Typography variant="body2" noWrap sx={{ maxWidth: 160 }}>
+                  {primaryVendor.name}
+                </Typography>
+                <Typography variant="caption" sx={{ color: 'text.secondary' }} noWrap>
+                  {primaryVendor.seller?.name || 'N/A'}
+                  {vendors.length > 1 ? ` +${vendors.length - 1}` : ''}
+                </Typography>
+              </Box>
+            </Stack>
+          ) : (
+            'N/A'
+          )}
+        </TableCell>
+      )}
 
       <TableCell sx={{ whiteSpace: 'nowrap' }}>{getPaymentLabel(row.paymentMethod)}</TableCell>
 
@@ -122,4 +124,5 @@ OrderTableRow.propTypes = {
   serialNumber: PropTypes.number.isRequired,
   onViewRow: PropTypes.func,
   onEditRow: PropTypes.func,
+  hideVendor: PropTypes.bool,
 };

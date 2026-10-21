@@ -38,7 +38,7 @@ const authJwt = {
       path: 'sign-up',
       element: (
         <GuestGuard>
-          <AuthBrandLayout>
+          <AuthBrandLayout wide contentMaxWidth={560} constrainInputs={false}>
             <Jwt.SignUpPage />
           </AuthBrandLayout>
         </GuestGuard>

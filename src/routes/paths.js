@@ -231,6 +231,8 @@ export const paths = {
   adminDashboard: {
     root: ROOTS.ADMIN_DASHBOARD,
     categories: `${ROOTS.ADMIN_DASHBOARD}/categories`,
+    options: `${ROOTS.ADMIN_DASHBOARD}/options`,
+    pendingProducts: `${ROOTS.ADMIN_DASHBOARD}/pending-products`,
     events: `${ROOTS.ADMIN_DASHBOARD}/events`,
     products: {
       root: `${ROOTS.ADMIN_DASHBOARD}/products`,

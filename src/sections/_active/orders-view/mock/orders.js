@@ -1,4 +1,4 @@
-import { getPrimaryImage, MOCK_PRODUCTS } from 'src/sections/_active/products-view/mock';
+import { getPrimaryImage, getProductStore, MOCK_PRODUCTS } from 'src/sections/_active/products-view/mock';
 import { MOCK_USERS } from 'src/sections/_active/users-view/mock';
 
 import { ORDER_STATUS_FLOW } from '../order-table-config';
@@ -6,7 +6,7 @@ import { ORDER_STATUS_FLOW } from '../order-table-config';
 // ----------------------------------------------------------------------
 
 const vendorFromProduct = (product) => {
-  const company = product?.company;
+  const company = getProductStore(product);
   if (!company) return null;
 
   return {

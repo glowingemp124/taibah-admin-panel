@@ -60,7 +60,7 @@ export function AdminOverviewView() {
 
   const sellers = MOCK_USERS.filter((row) => (row.roles || []).includes('seller'));
   const activeProducts = MOCK_PRODUCTS.filter((row) => (row.status || 'active') === 'active');
-  const lowStockItems = MOCK_PRODUCTS.filter((row) => (row.quantity ?? 0) <= LOW_STOCK_THRESHOLD);
+  const lowStockItems = MOCK_PRODUCTS.filter((row) => (row.stock ?? 0) <= LOW_STOCK_THRESHOLD);
   const pendingOrders = MOCK_ORDERS.filter((row) => row.status === 'pending');
   const cancelledOrders = MOCK_ORDERS.filter((row) => row.status === 'cancelled');
   const paidOrders = MOCK_ORDERS.filter((row) => row.status !== 'cancelled');
@@ -108,7 +108,7 @@ export function AdminOverviewView() {
     MOCK_ORDERS.forEach((order) => {
       (order.items || []).forEach((item) => {
         const product = MOCK_PRODUCTS.find((row) => row._id === item.productId);
-        const category = product?.category || 'Other';
+        const category = product?.category?.title || 'Other';
         counts[category] = (counts[category] || 0) + (item.quantity || 1);
       });
     });
@@ -120,7 +120,7 @@ export function AdminOverviewView() {
     if (!rows.length) {
       const byCategory = {};
       MOCK_PRODUCTS.forEach((product) => {
-        const category = product.category || 'Other';
+        const category = product.category?.title || 'Other';
         byCategory[category] = (byCategory[category] || 0) + (product.soldCount || 0);
       });
       rows = Object.entries(byCategory)
@@ -151,11 +151,11 @@ export function AdminOverviewView() {
     if (!rows.length) {
       rows = MOCK_COMPANIES.slice(0, 5).map((company) => ({
         name: company.name,
-        orders: MOCK_PRODUCTS.filter((product) => product.company?._id === company._id).reduce(
+        orders: MOCK_PRODUCTS.filter((product) => product.company?._id === company.seller?._id).reduce(
           (sum, product) => sum + (product.soldCount || 0),
           0
         ),
-        delivered: MOCK_PRODUCTS.filter((product) => product.company?._id === company._id).length,
+        delivered: MOCK_PRODUCTS.filter((product) => product.company?._id === company.seller?._id).length,
       }));
     }
 
@@ -176,7 +176,7 @@ export function AdminOverviewView() {
             name: seller.name,
             storeName: company?.name || pending?.storeName || seller.name,
             createdAt: seller.createdAt,
-            productCount: MOCK_PRODUCTS.filter((row) => row.company?.seller?._id === seller._id).length,
+            productCount: MOCK_PRODUCTS.filter((row) => row.company?._id === seller._id).length,
             status: pending || seller.status !== 'active' ? 'Pending' : 'Approved',
             href: pending ? null : paths.adminDashboard.sellers.details(seller._id),
           };
@@ -205,7 +205,7 @@ export function AdminOverviewView() {
           _id: product._id,
           title: product.title,
           image: getPrimaryImage(product),
-          category: product.category,
+          category: product.category?.title,
           storeName: product.company?.name || '—',
           sales: (product.soldCount || 0) * (product.salePrice || product.price || 0),
           rank: `Top ${index + 1}`,

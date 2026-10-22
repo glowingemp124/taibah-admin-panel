@@ -12,6 +12,8 @@ import ProtectedRoute from 'src/auth/guard/custom-auth-guard';
 
 const IndexPage = lazy(() => import('src/pages/admin-dashboard'));
 const CategoriesPage = lazy(() => import('src/pages/admin-dashboard/categories'));
+const OptionsPage = lazy(() => import('src/pages/admin-dashboard/options'));
+const PendingProductsPage = lazy(() => import('src/pages/admin-dashboard/pending-products'));
 const EventsPage = lazy(() => import('src/pages/admin-dashboard/events'));
 const ProductsPage = lazy(() => import('src/pages/admin-dashboard/products'));
 const ProductCreatePage = lazy(() => import('src/pages/admin-dashboard/products/new'));
@@ -54,6 +56,8 @@ export const adminDashboardRoutes = [
     children: [
       { element: <IndexPage />, index: true },
       { path: 'categories', element: <CategoriesPage /> },
+      { path: 'options', element: <OptionsPage /> },
+      { path: 'pending-products', element: <PendingProductsPage /> },
       { path: 'events', element: <EventsPage /> },
       {
         path: 'products',

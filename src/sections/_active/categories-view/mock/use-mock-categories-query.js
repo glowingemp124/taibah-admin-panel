@@ -1,4 +1,4 @@
-import { useMemo } from 'react';
+import { useMemo, useState } from 'react';
 
 import { MOCK_CATEGORIES } from './categories';
 
@@ -6,9 +6,10 @@ import { MOCK_CATEGORIES } from './categories';
 
 export function useGetMockCategoriesQuery(params = {}) {
   const { search = '', page = 0, status = '', limit = 10 } = params;
+  const [revision, setRevision] = useState(0);
 
   return useMemo(() => {
-    let rows = [...MOCK_CATEGORIES];
+    let rows = MOCK_CATEGORIES.map((row) => ({ ...row, attributes: [...(row.attributes || [])] }));
 
     if (search) {
       const query = search.toLowerCase();
@@ -39,7 +40,7 @@ export function useGetMockCategoriesQuery(params = {}) {
       isLoading: false,
       isFetching: false,
       error: undefined,
-      refetch: () => {},
+      refetch: () => setRevision((value) => value + 1),
     };
-  }, [search, page, status, limit]);
+  }, [search, page, status, limit, revision]);
 }

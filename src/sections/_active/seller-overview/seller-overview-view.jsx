@@ -72,7 +72,7 @@ export function SellerOverviewView() {
   const [currentOrder, setCurrentOrder] = useState(null);
   const orderTrend = ORDER_TREND[orderTrendPeriod];
 
-  const products = MOCK_PRODUCTS.filter((row) => row.company?.seller?._id === sellerId);
+  const products = MOCK_PRODUCTS.filter((row) => row.company?._id === sellerId);
   const orders = useMemo(
     () => MOCK_ORDERS.filter((row) => (row.items || []).some((item) => item.vendor?.seller?._id === sellerId)),
     [revision, sellerId]
@@ -81,7 +81,7 @@ export function SellerOverviewView() {
   const sales = orders.filter((row) => row.status !== 'cancelled').reduce((sum, row) => sum + getOrderTotal(row), 0);
   const customers = new Set(orders.map((row) => row.customer?._id).filter(isStoreClient));
   const activeProducts = products.filter((row) => (row.status || 'active') === 'active');
-  const lowStockItems = products.filter((row) => (row.quantity ?? 0) <= LOW_STOCK_THRESHOLD);
+  const lowStockItems = products.filter((row) => (row.stock ?? 0) <= LOW_STOCK_THRESHOLD);
   const pendingShipments = orders.filter((row) => row.status === 'pending' || row.status === 'processing');
   const cancelledOrders = orders.filter((row) => row.status === 'cancelled');
   const returnRequests = cancelledOrders.length;

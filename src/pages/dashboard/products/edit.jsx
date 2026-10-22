@@ -11,7 +11,7 @@ const metadata = { title: `Edit product | ${CONFIG.site.name}` };
 export default function Page() {
   const { id = '' } = useParams();
   const { companyId, sellerId } = useAppRole();
-  const product = MOCK_PRODUCTS.find((row) => row._id === id && row.company?.seller?._id === sellerId);
+  const product = MOCK_PRODUCTS.find((row) => row._id === id && row.company?._id === sellerId);
 
   return (
     <>

@@ -1,4 +1,5 @@
 import { zodResolver } from '@hookform/resolvers/zod';
+import PropTypes from 'prop-types';
 import { useEffect, useMemo } from 'react';
 import { useForm } from 'react-hook-form';
 import { z as zod } from 'zod';
@@ -17,6 +18,11 @@ import { Field, Form, schemaHelper } from 'src/components/hook-form';
 import { toast } from 'src/components/snackbar';
 import { fData } from 'src/utils/format-number';
 
+import { MOCK_OPTIONS } from 'src/sections/_active/options-view/mock';
+import { toImageKey, toImageUrl } from 'src/sections/_active/products-view/product-utils';
+
+import { CATEGORY_UNITS, categoryHasProducts, syncCategoryOnProducts, upsertMockCategory } from './mock';
+
 // ----------------------------------------------------------------------
 
 const STATUS_OPTIONS = [
@@ -24,7 +30,11 @@ const STATUS_OPTIONS = [
   { value: 'inactive', label: 'Inactive' },
 ];
 
-export function CategoryFormDialog({ currentCategory, open, onClose }) {
+const OPTIONS_LOCKED_MESSAGE = "This category has products, so its options can't change";
+
+const sameIds = (a = [], b = []) => a.length === b.length && [...a].sort().join('|') === [...b].sort().join('|');
+
+export function CategoryFormDialog({ currentCategory, open, onClose, onSuccess }) {
   const isEdit = !!currentCategory;
 
   const CategorySchema = useMemo(
@@ -32,6 +42,8 @@ export function CategoryFormDialog({ currentCategory, open, onClose }) {
       zod.object({
         image: schemaHelper.file({ message: { required_error: 'Image is required!' } }),
         title: zod.string().min(1, { message: 'Title is required!' }),
+        unit: zod.enum(CATEGORY_UNITS, { required_error: 'Unit is required!' }),
+        attributeIds: zod.array(zod.string()),
         status: isEdit ? zod.enum(['active', 'inactive']) : zod.string().optional(),
       }),
     [isEdit]
@@ -41,10 +53,14 @@ export function CategoryFormDialog({ currentCategory, open, onClose }) {
     () => ({
       image: currentCategory?.image || currentCategory?.icon || currentCategory?.coverUrl || null,
       title: currentCategory?.title || currentCategory?.name || '',
+      unit: currentCategory?.unit || 'piece',
+      attributeIds: (currentCategory?.attributes || []).map((attribute) => attribute._id),
       status: currentCategory?.status || 'active',
     }),
     [currentCategory]
   );
+
+  const optionChoices = useMemo(() => (open ? MOCK_OPTIONS.map((option) => ({ value: option._id, label: option.name })) : []), [open]);
 
   const methods = useForm({
     mode: 'all',
@@ -54,6 +70,7 @@ export function CategoryFormDialog({ currentCategory, open, onClose }) {
 
   const {
     reset,
+    setError,
     handleSubmit,
     formState: { isSubmitting },
   } = methods;
@@ -65,11 +82,29 @@ export function CategoryFormDialog({ currentCategory, open, onClose }) {
   }, [open, defaultValues, reset]);
 
   const onSubmit = handleSubmit(async (data) => {
+    if (isEdit && !sameIds(data.attributeIds, defaultValues.attributeIds) && categoryHasProducts(currentCategory._id)) {
+      setError('attributeIds', { type: 'manual', message: OPTIONS_LOCKED_MESSAGE });
+      toast.error(OPTIONS_LOCKED_MESSAGE);
+      return;
+    }
+
     try {
       await new Promise((resolve) => setTimeout(resolve, 500));
+
+      const saved = upsertMockCategory({
+        _id: currentCategory?._id,
+        title: data.title.trim(),
+        image: toImageUrl(data.image),
+        imageKey: data.image === currentCategory?.image ? currentCategory?.imageKey : toImageKey(data.image, 'categories'),
+        unit: data.unit,
+        attributeIds: data.attributeIds,
+        status: isEdit ? data.status : 'active',
+      });
+      syncCategoryOnProducts(saved);
+
       toast.success(isEdit ? 'Category updated successfully!' : 'Category created successfully!');
+      onSuccess?.();
       onClose();
-      console.info('CATEGORY_DATA', data);
     } catch (error) {
       console.error(error);
       toast.error(isEdit ? 'Failed to update category' : 'Failed to create category');
@@ -105,7 +140,6 @@ export function CategoryFormDialog({ currentCategory, open, onClose }) {
                 sx={{
                   width: 140,
                   height: 140,
-                  // borderRadius: 2,
                   '& > div': { borderRadius: 2 },
                   '& img': { borderRadius: '8px !important' },
                 }}
@@ -113,6 +147,24 @@ export function CategoryFormDialog({ currentCategory, open, onClose }) {
             </Stack>
 
             <Field.Text name="title" label="Title" />
+
+            <Field.Select name="unit" label="Unit" SelectProps={{ MenuProps: { PaperProps: { sx: { maxHeight: 220 } } } }}>
+              {CATEGORY_UNITS.map((unit) => (
+                <MenuItem key={unit} value={unit} sx={{ textTransform: 'none' }}>
+                  {unit}
+                </MenuItem>
+              ))}
+            </Field.Select>
+
+            <Field.MultiSelect
+              chip
+              checkbox
+              fullWidth
+              name="attributeIds"
+              label="Options"
+              options={optionChoices}
+              helperText="Products in this category will choose a value for each option."
+            />
 
             {isEdit && (
               <Field.Select name="status" label="Status">
@@ -138,3 +190,10 @@ export function CategoryFormDialog({ currentCategory, open, onClose }) {
     </Dialog>
   );
 }
+
+CategoryFormDialog.propTypes = {
+  currentCategory: PropTypes.object,
+  open: PropTypes.bool,
+  onClose: PropTypes.func,
+  onSuccess: PropTypes.func,
+};

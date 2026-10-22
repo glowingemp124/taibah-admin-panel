@@ -18,16 +18,15 @@ import { StatusTabsFilterWrapper } from 'src/components/generic-table/tabs-filte
 import { Iconify } from 'src/components/iconify';
 import { Scrollbar } from 'src/components/scrollbar';
 import { TableEmptyRows, TableHeadCustom, TableNoData, TablePaginationCustom } from 'src/components/table';
+import { toast } from 'src/components/snackbar';
 import { useDataTable } from 'src/hooks/use-data-table';
 import { useBoolean } from 'src/hooks/use-boolean';
-import { useDeleteConfirmation } from 'src/hooks/use-delete-confirmation';
-import { useDeleteCategoryMutation } from 'src/store/Reducer/categories-api';
 import { calculateSerialNumber } from 'src/utils/table-utils';
 
 import { CategoryFormDialog } from './category-form-dialog';
 import { CategoryTableRow } from './category-table-row';
 import { DEFAULT_FILTERS, FILTER_FIELDS, STATUS_FILTER_FIELD, TABLE_HEAD, TABLE_OPTIONS, TOOLBAR_FILTER_FIELDS } from './category-table-config';
-import { useGetMockCategoriesQuery } from './mock';
+import { categoryHasProducts, deleteMockCategory, useGetMockCategoriesQuery } from './mock';
 
 export function CategoryListView() {
   const {
@@ -47,6 +46,7 @@ export function CategoryListView() {
     handlePageChange,
     handleRemoveFilter,
     handleResetFilters,
+    refetch,
   } = useDataTable({
     queryHook: useGetMockCategoriesQuery,
     defaultFilters: DEFAULT_FILTERS,
@@ -58,10 +58,45 @@ export function CategoryListView() {
   const formDialog = useBoolean();
   const [currentCategory, setCurrentCategory] = useState(null);
 
-  const { confirm, itemToDelete, isDeleting, handleDeleteRow, handleConfirmDelete, handleCancelDelete } = useDeleteConfirmation(useDeleteCategoryMutation, {
-    successMessage: 'Category deleted successfully!',
-    errorMessage: 'Failed to delete category',
-  });
+  const confirm = useBoolean();
+  const [itemToDelete, setItemToDelete] = useState(null);
+  const [isDeleting, setIsDeleting] = useState(false);
+
+  const handleDeleteRow = useCallback(
+    (row) => {
+      if (categoryHasProducts(row._id)) {
+        toast.error('This category has products');
+        return;
+      }
+      setItemToDelete(row);
+      confirm.onTrue();
+    },
+    [confirm]
+  );
+
+  const handleCancelDelete = useCallback(() => {
+    if (!isDeleting) {
+      confirm.onFalse();
+      setItemToDelete(null);
+    }
+  }, [confirm, isDeleting]);
+
+  const handleConfirmDelete = useCallback(async () => {
+    setIsDeleting(true);
+    await new Promise((resolve) => setTimeout(resolve, 400));
+
+    if (categoryHasProducts(itemToDelete._id)) {
+      toast.error('This category has products');
+    } else {
+      deleteMockCategory(itemToDelete._id);
+      toast.success('Category deleted successfully!');
+      refetch();
+    }
+
+    setIsDeleting(false);
+    confirm.onFalse();
+    setItemToDelete(null);
+  }, [confirm, itemToDelete, refetch]);
 
   const handleOpenCreate = useCallback(() => {
     setCurrentCategory(null);
@@ -150,7 +185,7 @@ export function CategoryListView() {
             )}
 
             <Scrollbar>
-              <Table size={isDense ? 'small' : 'medium'} sx={{ minWidth: 800 }}>
+              <Table size={isDense ? 'small' : 'medium'} sx={{ minWidth: 1000 }}>
                 <TableHeadCustom headLabel={TABLE_HEAD} rowCount={dataList.length} />
 
                 <TableBody>
@@ -161,7 +196,7 @@ export function CategoryListView() {
                         row={row}
                         serialNumber={calculateSerialNumber(currentPage, itemsPerPage, index)}
                         onEditRow={() => handleOpenEdit(row)}
-                        onDeleteRow={() => handleDeleteRow(row._id, row.title || row.name)}
+                        onDeleteRow={() => handleDeleteRow(row)}
                       />
                     ))}
 
@@ -177,7 +212,7 @@ export function CategoryListView() {
         </Card>
       </Box>
 
-      <CategoryFormDialog currentCategory={currentCategory} open={formDialog.value} onClose={handleCloseForm} />
+      <CategoryFormDialog currentCategory={currentCategory} open={formDialog.value} onClose={handleCloseForm} onSuccess={refetch} />
 
       <ConfirmDialog
         open={confirm.value}
@@ -185,7 +220,7 @@ export function CategoryListView() {
         title="Delete"
         content={
           <>
-            Are you sure you want to delete <strong>{itemToDelete?.name}</strong>? This action cannot be undone.
+            Are you sure you want to delete <strong>{itemToDelete?.title}</strong>? This action cannot be undone.
           </>
         }
         action={

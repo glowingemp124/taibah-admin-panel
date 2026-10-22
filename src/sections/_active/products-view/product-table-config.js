@@ -1,5 +1,7 @@
 import { createFilterField } from 'src/components/generic-table/table-filter-fields';
 
+import { MOCK_CATEGORIES } from 'src/sections/_active/categories-view/mock/categories';
+
 // ----------------------------------------------------------------------
 
 export const TABLE_OPTIONS = {
@@ -11,15 +13,19 @@ export const TABLE_HEAD = [
   { id: 'sr', label: 'Sr#', width: 72 },
   { id: 'image', label: 'Image', width: 88 },
   { id: 'title', label: 'Title', width: 220 },
-  { id: 'category', label: 'Category', width: 140 },
-  { id: 'company', label: 'Company', width: 170 },
-  { id: 'price', label: 'Price', width: 150 },
+  { id: 'category', label: 'Category', width: 130 },
+  { id: 'company', label: 'Company', width: 160 },
+  { id: 'price', label: 'Price', width: 160 },
+  { id: 'stock', label: 'Stock', width: 120 },
+  { id: 'variants', label: 'Variants', width: 110 },
   { id: 'reviews', label: 'Reviews', width: 130 },
-  { id: 'quantity', label: 'Quantity', width: 110 },
-  { id: 'favorite', label: 'Favorite', width: 110 },
-  { id: 'status', label: 'Status', width: 120 },
+  { id: 'favorite', label: 'Favorite', width: 90 },
+  { id: 'status', label: 'Status', width: 100 },
+  { id: 'review', label: 'Review', width: 110 },
   { id: 'action', label: 'Action', width: 140 },
 ];
+
+export const getTableHead = ({ showCompany = true } = {}) => (showCompany ? TABLE_HEAD : TABLE_HEAD.filter((cell) => cell.id !== 'company'));
 
 export const PRODUCT_STATUS_OPTIONS = [
   { value: 'all', label: 'All', color: 'default' },
@@ -29,29 +35,11 @@ export const PRODUCT_STATUS_OPTIONS = [
 
 export const PRODUCT_STATUS_EDIT_OPTIONS = PRODUCT_STATUS_OPTIONS.filter((option) => option.value !== 'all');
 
-export const CATEGORY_OPTIONS = [
-  { value: 'Modest Fashion', label: 'Modest Fashion' },
-  { value: 'Accessories', label: 'Accessories' },
-  { value: 'Hijab', label: 'Hijab' },
-  { value: 'Prayer Items', label: 'Prayer Items' },
-  { value: 'Islamic Gifts', label: 'Islamic Gifts' },
-  { value: 'Fragrance', label: 'Fragrance' },
-  { value: 'Home & Decor', label: 'Home & Decor' },
-  { value: 'Eid Collection', label: 'Eid Collection' },
-  { value: 'New Arrivals', label: 'New Arrivals' },
-  { value: 'Islamic Wear', label: 'Islamic Wear' },
-];
-
-export const COLOR_OPTIONS = [
-  { value: '#1B5E4B', label: 'Forest Green' },
-  { value: '#000000', label: 'Black' },
-  { value: '#8D6E3C', label: 'Brown' },
-  { value: '#1565C0', label: 'Blue' },
-  { value: '#26A69A', label: 'Teal' },
-  { value: '#D4A017', label: 'Gold' },
-  { value: '#C9A96E', label: 'Beige' },
-  { value: '#6D4C41', label: 'Coffee' },
-  { value: '#FFFFFF', label: 'White' },
+export const REVIEW_STATUS_OPTIONS = [
+  { value: 'all', label: 'All', color: 'default' },
+  { value: 'pending', label: 'Pending', color: 'warning' },
+  { value: 'approved', label: 'Approved', color: 'success' },
+  { value: 'rejected', label: 'Rejected', color: 'error' },
 ];
 
 export const SALE_FILTER_OPTIONS = [
@@ -76,7 +64,15 @@ export const FILTER_FIELDS = [
   }),
 
   createFilterField.search({
-    placeholder: 'Search products...',
+    placeholder: 'Search title, SKU or store...',
+  }),
+
+  createFilterField.select({
+    key: 'reviewStatus',
+    label: 'Review',
+    placeholder: 'Review',
+    defaultValue: 'all',
+    options: REVIEW_STATUS_OPTIONS,
   }),
 
   createFilterField.select({
@@ -84,7 +80,7 @@ export const FILTER_FIELDS = [
     label: 'Category',
     placeholder: 'Category',
     defaultValue: 'all',
-    options: [{ value: 'all', label: 'All Categories' }, ...CATEGORY_OPTIONS],
+    options: [{ value: 'all', label: 'All Categories' }, ...MOCK_CATEGORIES.map((category) => ({ value: category._id, label: category.title }))],
   }),
 
   createFilterField.select({
@@ -113,16 +109,6 @@ export const STATUS_FILTER_FIELD = FILTER_FIELDS.find((field) => field.type === 
 
 export const TOOLBAR_FILTER_FIELDS = FILTER_FIELDS.filter((field) => field.type !== 'status');
 
-export const getProductStatusLabel = (value) =>
-  PRODUCT_STATUS_OPTIONS.find((option) => option.value === value)?.label || value || 'N/A';
+export const getProductStatusLabel = (value) => PRODUCT_STATUS_OPTIONS.find((option) => option.value === value)?.label || value || 'N/A';
 
-export const getColorLabel = (value) => COLOR_OPTIONS.find((option) => option.value === value)?.label || value;
-
-export const getDiscountedPrice = (price, offPercent) => {
-  const off = Number(offPercent) || 0;
-  const base = Number(price) || 0;
-  if (off <= 0 || !base) return null;
-  return Math.round(base * (1 - off / 100) * 100) / 100;
-};
-
-export const isOnSale = (product) => Number(product?.offPercent) > 0;
+export const getReviewStatus = (value) => REVIEW_STATUS_OPTIONS.find((option) => option.value === value) || REVIEW_STATUS_OPTIONS[1];

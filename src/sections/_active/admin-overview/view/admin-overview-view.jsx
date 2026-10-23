@@ -14,11 +14,11 @@ import { AnalyticsWebsiteVisits } from 'src/sections/overview/analytics/analytic
 import { fCurrency, fNumber } from 'src/utils/format-number';
 
 import { getSellerApplications } from 'src/sections/_active/pending-sellers-view/mock';
-import { getOrderTotal, getOrderVendors, MOCK_ORDERS } from 'src/sections/_active/orders-view/mock';
+import { getOrderItems, getOrderNetTotal, MOCK_ORDERS } from 'src/sections/_active/orders-view/mock';
 import { OrderViewDialog } from 'src/sections/_active/orders-view/order-view-dialog';
 import { getPrimaryImage, MOCK_COMPANIES, MOCK_PRODUCTS } from 'src/sections/_active/products-view/mock';
 import { MOCK_TICKETS } from 'src/sections/_active/support-view/mock';
-import { MOCK_TRANSACTIONS } from 'src/sections/_active/transactions-view/mock';
+import { getMockTransactions, getTransactionsMeta } from 'src/sections/_active/transactions-view/mock';
 import { MOCK_USERS } from 'src/sections/_active/users-view/mock';
 import { SellerChartCard } from 'src/sections/_active/seller-overview/seller-chart-card';
 import { SellerStatCard } from 'src/sections/_active/seller-overview/seller-stat-card';
@@ -64,14 +64,17 @@ export function AdminOverviewView() {
   const pendingOrders = MOCK_ORDERS.filter((row) => row.status === 'pending');
   const cancelledOrders = MOCK_ORDERS.filter((row) => row.status === 'cancelled');
   const paidOrders = MOCK_ORDERS.filter((row) => row.status !== 'cancelled');
-  const sales = paidOrders.reduce((sum, row) => sum + getOrderTotal(row), 0);
+  const sales = paidOrders.reduce((sum, row) => sum + getOrderNetTotal(row), 0);
   const averageOrderValue = paidOrders.length ? sales / paidOrders.length : 0;
   const pendingApprovals = getSellerApplications().filter((row) => (row.verificationStatus || 'pending') === 'pending');
   const openTickets = MOCK_TICKETS.filter((row) => row.status === 'open');
-  const refundedTransactions = MOCK_TRANSACTIONS.filter((row) => row.status === 'refunded');
-  const refundedTotal = refundedTransactions.reduce((sum, row) => sum + (row.amount || 0), 0);
-  const orderTotal = MOCK_TRANSACTIONS.reduce((sum, row) => sum + (row.amount || 0), 0);
-  const currentBalance = orderTotal - refundedTotal;
+  // Only captured amounts are income; held amounts are shown separately.
+  // From the API's meta.totals, not by adding up rows.
+  // Same rows and rules as the Transactions list (no filters), built fresh so order changes show up.
+  const transactions = useMemo(() => getMockTransactions(), []);
+  const { totals: transactionTotals } = getTransactionsMeta(transactions);
+  const incomeTotal = transactionTotals.income;
+  const heldTotal = transactionTotals.held;
 
   const statusSeries = useMemo(() => {
     const counts = MOCK_ORDERS.reduce((acc, row) => {
@@ -93,12 +96,8 @@ export function AdminOverviewView() {
 
     return {
       categories: months.map((index) => MONTHS[index]),
-      users: months.map(
-        (month) => MOCK_USERS.filter((row) => (row.roles || []).includes('buyer') && new Date(row.createdAt).getMonth() === month).length
-      ),
-      sellers: months.map(
-        (month) => MOCK_USERS.filter((row) => (row.roles || []).includes('seller') && new Date(row.createdAt).getMonth() === month).length
-      ),
+      users: months.map((month) => MOCK_USERS.filter((row) => (row.roles || []).includes('buyer') && new Date(row.createdAt).getMonth() === month).length),
+      sellers: months.map((month) => MOCK_USERS.filter((row) => (row.roles || []).includes('seller') && new Date(row.createdAt).getMonth() === month).length),
     };
   }, []);
 
@@ -106,7 +105,7 @@ export function AdminOverviewView() {
     const counts = {};
 
     MOCK_ORDERS.forEach((order) => {
-      (order.items || []).forEach((item) => {
+      getOrderItems(order).forEach((item) => {
         const product = MOCK_PRODUCTS.find((row) => row._id === item.productId);
         const category = product?.category?.title || 'Other';
         counts[category] = (counts[category] || 0) + (item.quantity || 1);
@@ -134,27 +133,25 @@ export function AdminOverviewView() {
   const sellerPerformance = useMemo(() => {
     const byVendor = new Map();
 
+    // Per store order, so a store's delivered count follows its own status.
     MOCK_ORDERS.forEach((order) => {
-      const vendors = getOrderVendors(order);
-      const names = vendors.length ? vendors : [{ _id: 'unknown', name: 'Marketplace' }];
-
-      names.forEach((vendor) => {
-        const current = byVendor.get(vendor._id) || { name: vendor.name, orders: 0, delivered: 0 };
+      order.stores.forEach((store) => {
+        const current = byVendor.get(store.sellerId) || { name: store.name, orders: 0, delivered: 0 };
         current.orders += 1;
-        if (order.status === 'delivered') current.delivered += 1;
-        byVendor.set(vendor._id, current);
+        if (store.status === 'delivered') current.delivered += 1;
+        byVendor.set(store.sellerId, current);
       });
     });
 
-    let rows = [...byVendor.values()].filter((row) => row.orders > 0).sort((a, b) => b.orders - a.orders).slice(0, 5);
+    let rows = [...byVendor.values()]
+      .filter((row) => row.orders > 0)
+      .sort((a, b) => b.orders - a.orders)
+      .slice(0, 5);
 
     if (!rows.length) {
       rows = MOCK_COMPANIES.slice(0, 5).map((company) => ({
         name: company.name,
-        orders: MOCK_PRODUCTS.filter((product) => product.company?._id === company.seller?._id).reduce(
-          (sum, product) => sum + (product.soldCount || 0),
-          0
-        ),
+        orders: MOCK_PRODUCTS.filter((product) => product.company?._id === company.seller?._id).reduce((sum, product) => sum + (product.soldCount || 0), 0),
         delivered: MOCK_PRODUCTS.filter((product) => product.company?._id === company.seller?._id).length,
       }));
     }
@@ -191,7 +188,7 @@ export function AdminOverviewView() {
         .slice(0, 5)
         .map((order) => ({
           ...order,
-          sellerName: getOrderVendors(order)[0]?.name || '—',
+          sellerName: order.stores.map((store) => store.name).join(', ') || '—',
         })),
     []
   );
@@ -215,20 +212,20 @@ export function AdminOverviewView() {
 
   const recentActivity = useMemo(
     () =>
-      [...MOCK_TRANSACTIONS]
+      [...transactions]
         .sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt))
         .slice(0, 5)
         .map((row) => {
-          const isRefund = row.status === 'refunded' || row.status === 'cancelled';
+          const kind = { captured: ['Paid', 'success'], authorized: ['Held', 'info'], released: ['Released', 'warning'] }[row.status] || ['Sale', 'success'];
           return {
             id: row._id,
-            title: isRefund ? `Refund #${row.transactionId}` : `Order #${row.orderId}`,
-            type: isRefund ? 'Refund' : row.status === 'pending' ? 'Pending' : 'Sale',
-            amount: isRefund ? -Math.abs(row.amount || 0) : row.amount || 0,
-            color: isRefund ? 'warning' : row.status === 'pending' ? 'info' : 'success',
+            title: `Order ${row.orderId}`,
+            type: kind[0],
+            amount: row.status === 'released' ? 0 : row.amount || 0,
+            color: kind[1],
           };
         }),
-    []
+    [transactions]
   );
 
   const handleOpenView = useCallback(
@@ -360,9 +357,11 @@ export function AdminOverviewView() {
         <Grid xs={12} md={6} lg={4} sx={GRID_ITEM_SX}>
           <AdminTransactions
             title="Transactions"
-            currentBalance={currentBalance}
-            orderTotal={orderTotal}
-            refunded={refundedTotal}
+            currentBalance={incomeTotal}
+            rows={[
+              { label: 'Paid (captured)', value: incomeTotal },
+              { label: 'Held (not income yet)', value: heldTotal },
+            ]}
             list={recentActivity}
             sx={CARD_SX}
           />

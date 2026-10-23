@@ -8,6 +8,7 @@ export function SellerListView() {
       heading="Sellers"
       role="seller"
       hideUserType
+      showFeatured
       detailsHref={(id) => paths.adminDashboard.sellers.details(id)}
     />
   );

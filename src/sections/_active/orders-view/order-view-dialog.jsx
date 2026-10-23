@@ -6,9 +6,11 @@ import TimelineContent from '@mui/lab/TimelineContent';
 import TimelineDot from '@mui/lab/TimelineDot';
 import TimelineItem, { timelineItemClasses } from '@mui/lab/TimelineItem';
 import TimelineSeparator from '@mui/lab/TimelineSeparator';
+import Alert from '@mui/material/Alert';
 import Avatar from '@mui/material/Avatar';
 import Box from '@mui/material/Box';
 import Button from '@mui/material/Button';
+import Card from '@mui/material/Card';
 import Dialog from '@mui/material/Dialog';
 import DialogActions from '@mui/material/DialogActions';
 import DialogContent from '@mui/material/DialogContent';
@@ -17,27 +19,188 @@ import Divider from '@mui/material/Divider';
 import Stack from '@mui/material/Stack';
 import Typography from '@mui/material/Typography';
 
+import { Iconify } from 'src/components/iconify';
 import { Label } from 'src/components/label';
 import { fCurrency } from 'src/utils/format-number';
-import { fDate, fDateTime, formatStr } from 'src/utils/format-time';
+import { fDateTime } from 'src/utils/format-time';
 import { getStatusColor } from 'src/utils/table-utils';
 
-import { ProductStoreCard } from 'src/sections/_active/products-view/product-store-card';
+import { getOrderStatusLabel, getPaymentLabel, getPaymentStatus } from './order-table-config';
 
-import { getOrderTotal, getOrderVendors } from './mock';
-import { getOrderStatusLabel, getPaymentLabel } from './order-table-config';
+// ----------------------------------------------------------------------
 
-function formatStepTime(step) {
-  if (step.at) return fDateTime(step.at);
-  if (step.expected) return `Expected ${fDate(step.expected, formatStr.paramCase.date)}`;
-  return 'Pending';
+const ROLE_LABELS = { customer: 'Customer', seller: 'Seller', admin: 'Admin', system: 'System' };
+
+function TotalsRows({ subtotal, discountTotal, total, cancelledTotal = 0, netTotal }) {
+  return (
+    <Stack spacing={0.5} sx={{ typography: 'body2' }}>
+      <Stack direction="row" justifyContent="space-between">
+        <Box component="span" sx={{ color: 'text.secondary' }}>
+          Subtotal
+        </Box>
+        <span>{fCurrency(subtotal)}</span>
+      </Stack>
+      {discountTotal > 0 && (
+        <Stack direction="row" justifyContent="space-between">
+          <Box component="span" sx={{ color: 'text.secondary' }}>
+            Discount
+          </Box>
+          <Box component="span" sx={{ color: 'error.main' }}>
+            -{fCurrency(discountTotal)}
+          </Box>
+        </Stack>
+      )}
+      <Stack direction="row" justifyContent="space-between" sx={{ typography: 'subtitle1' }}>
+        <span>Total</span>
+        <span>{fCurrency(total)}</span>
+      </Stack>
+      {cancelledTotal > 0 && (
+        <>
+          <Stack direction="row" justifyContent="space-between">
+            <Box component="span" sx={{ color: 'text.secondary' }}>
+              Refunded (cancelled stores)
+            </Box>
+            <Box component="span" sx={{ color: 'error.main' }}>
+              -{fCurrency(cancelledTotal)}
+            </Box>
+          </Stack>
+          <Stack direction="row" justifyContent="space-between" sx={{ typography: 'subtitle1' }}>
+            <span>Net</span>
+            <span>{fCurrency(netTotal)}</span>
+          </Stack>
+        </>
+      )}
+    </Stack>
+  );
 }
 
-export function OrderViewDialog({ order, open, onClose, hideVendor = false }) {
+TotalsRows.propTypes = {
+  subtotal: PropTypes.number,
+  discountTotal: PropTypes.number,
+  total: PropTypes.number,
+  cancelledTotal: PropTypes.number,
+  netTotal: PropTypes.number,
+};
+
+function StoreOrderSection({ store, onEdit }) {
+  const history = store.history || [];
+
+  return (
+    <Card variant="outlined" sx={{ p: 2.5 }}>
+      <Stack direction="row" spacing={1.5} alignItems="center" sx={{ mb: 2 }}>
+        <Avatar src={store.logo} alt={store.name} variant="rounded" sx={{ width: 40, height: 40 }} />
+        <Box sx={{ flex: 1, minWidth: 0 }}>
+          <Typography variant="subtitle1" noWrap>
+            {store.name}
+          </Typography>
+          <Typography variant="caption" sx={{ color: 'text.secondary' }}>
+            {store.code}
+          </Typography>
+        </Box>
+        <Label variant="soft" color={getStatusColor(store.status)}>
+          {getOrderStatusLabel(store.status)}
+        </Label>
+        <Label variant="soft" color={getPaymentStatus(store.paymentStatus).color}>
+          {getPaymentStatus(store.paymentStatus).label}
+        </Label>
+        {onEdit && (
+          <Button size="small" variant="outlined" color="primary" startIcon={<Iconify icon="solar:pen-bold" />} onClick={() => onEdit(store)}>
+            Edit
+          </Button>
+        )}
+      </Stack>
+
+      <Stack direction={{ xs: 'column', md: 'row' }} spacing={3}>
+        <Stack spacing={2} sx={{ flex: 1, minWidth: 0 }}>
+          <Stack spacing={1.5}>
+            {store.items.map((line) => (
+              <Stack key={line._id} direction="row" spacing={1.5} alignItems="center">
+                <Avatar src={line.image} alt={line.title} variant="rounded" sx={{ width: 44, height: 44 }} />
+                <Box sx={{ minWidth: 0, flex: 1 }}>
+                  <Typography variant="subtitle2" noWrap>
+                    {line.title}
+                  </Typography>
+                  <Typography variant="caption" sx={{ color: 'text.secondary' }}>
+                    {[line.variant, `Qty ${line.quantity}`, line.sku].filter(Boolean).join(' · ')}
+                  </Typography>
+                </Box>
+                <Stack alignItems="flex-end">
+                  <Typography variant="subtitle2">{fCurrency(line.total)}</Typography>
+                  {line.discount > 0 && (
+                    <Typography variant="caption" sx={{ color: 'text.disabled', textDecoration: 'line-through' }}>
+                      {fCurrency(line.originalPrice * line.quantity)}
+                    </Typography>
+                  )}
+                </Stack>
+              </Stack>
+            ))}
+          </Stack>
+
+          <Divider sx={{ borderStyle: 'dashed' }} />
+
+          <TotalsRows subtotal={store.subtotal} discountTotal={store.discountTotal} total={store.total} cancelledTotal={store.cancelledTotal} netTotal={store.netTotal} />
+
+          {store.status === 'cancelled' && store.cancelReason && (
+            <Alert severity="error" variant="outlined">
+              Cancelled: {store.cancelReason}
+            </Alert>
+          )}
+
+          <Box>
+            <Typography variant="caption" sx={{ color: 'text.disabled' }}>
+              Internal note
+            </Typography>
+            <Typography variant="body2" sx={{ color: store.note ? 'text.primary' : 'text.secondary', whiteSpace: 'pre-wrap' }}>
+              {store.note?.trim() || 'No note'}
+            </Typography>
+          </Box>
+        </Stack>
+
+        <Box sx={{ flex: 0.9, minWidth: 0 }}>
+          <Typography variant="subtitle2" sx={{ mb: 1 }}>
+            Timeline
+          </Typography>
+          <Timeline sx={{ p: 0, m: 0, [`& .${timelineItemClasses.root}:before`]: { flex: 0, padding: 0 } }}>
+            {history.map((entry, index) => (
+              <TimelineItem key={`${entry.status}-${entry.at}`}>
+                <TimelineSeparator>
+                  <TimelineDot color={entry.status === 'cancelled' ? 'error' : index === history.length - 1 ? 'primary' : 'grey'} />
+                  {index === history.length - 1 ? null : <TimelineConnector />}
+                </TimelineSeparator>
+                <TimelineContent sx={{ py: 0.75 }}>
+                  <Typography variant="subtitle2">{getOrderStatusLabel(entry.status)}</Typography>
+                  <Typography variant="caption" sx={{ display: 'block', color: 'text.secondary' }}>
+                    {fDateTime(entry.at)}
+                    {entry.role ? ` · ${entry.by?.name ? `${entry.by.name} (${ROLE_LABELS[entry.role] || entry.role})` : ROLE_LABELS[entry.role] || entry.role}` : ''}
+                  </Typography>
+                  {entry.reason && (
+                    <Typography variant="caption" sx={{ color: 'error.main' }}>
+                      {entry.reason}
+                    </Typography>
+                  )}
+                </TimelineContent>
+              </TimelineItem>
+            ))}
+          </Timeline>
+        </Box>
+      </Stack>
+    </Card>
+  );
+}
+
+StoreOrderSection.propTypes = {
+  store: PropTypes.object.isRequired,
+  onEdit: PropTypes.func,
+};
+
+// ----------------------------------------------------------------------
+
+/** One section per store order. Sellers only ever receive their own store in `order.stores`. */
+export function OrderViewDialog({ order, open, onClose, onEditStore, sellerMode = false }) {
   if (!order) return null;
 
-  const total = getOrderTotal(order);
-  const vendors = getOrderVendors(order);
+  const paymentStatus = getPaymentStatus(order.paymentStatus);
+  const details = order.addressDetails;
 
   return (
     <Dialog fullWidth maxWidth="md" open={open} onClose={onClose}>
@@ -45,152 +208,63 @@ export function OrderViewDialog({ order, open, onClose, hideVendor = false }) {
 
       <DialogContent>
         <Stack spacing={3} sx={{ pt: 1 }}>
-          <Box
-            sx={{
-              p: 2.5,
-              borderRadius: 2,
-              color: 'primary.contrastText',
-              bgcolor: order.status === 'cancelled' ? 'error.main' : 'primary.main',
-            }}
-          >
+          <Box sx={{ p: 2.5, borderRadius: 2, color: 'primary.contrastText', bgcolor: order.status === 'cancelled' ? 'error.main' : 'primary.main' }}>
             <Typography variant="caption" sx={{ opacity: 0.8 }}>
-              Order ID #{order.orderId}
+              Order {order.code}
+              {sellerMode && order.storeOrderCode ? ` · Your part ${order.storeOrderCode}` : ''}
             </Typography>
             <Typography variant="h6" sx={{ mt: 0.5 }}>
-              {order.status === 'on-the-way' ? 'Your Order Is On The Way' : getOrderStatusLabel(order.status)}
+              {getOrderStatusLabel(order.status)}
             </Typography>
-            {order.estimatedDelivery && (
-              <Typography variant="body2" sx={{ mt: 0.5, opacity: 0.9 }}>
-                Estimated Delivery: {order.estimatedDelivery}
-              </Typography>
-            )}
+            <Typography variant="body2" sx={{ mt: 0.5, opacity: 0.9 }}>
+              Placed {fDateTime(order.createdAt)}
+              {!sellerMode && order.stores.length > 1 ? ` · ${order.stores.length} stores` : ''}
+            </Typography>
           </Box>
 
           <Stack direction={{ xs: 'column', md: 'row' }} spacing={3}>
-            <Box sx={{ flex: 1.1 }}>
-              <Typography variant="subtitle1" sx={{ mb: 1.5 }}>
-                Tracking
+            <Stack spacing={1} sx={{ flex: 1 }}>
+              <Typography variant="subtitle2">Customer</Typography>
+              <Typography variant="body2">{order.customer?.name || 'N/A'}</Typography>
+              <Typography variant="caption" sx={{ color: 'text.secondary' }}>
+                {order.customer?.email}
               </Typography>
-              <Timeline sx={{ p: 0, m: 0, [`& .${timelineItemClasses.root}:before`]: { flex: 0, padding: 0 } }}>
-                {(order.timeline || []).map((step, index) => {
-                  const last = index === (order.timeline || []).length - 1;
-                  const isCurrent = step.status === order.status;
+            </Stack>
 
-                  return (
-                    <TimelineItem key={step.status}>
-                      <TimelineSeparator>
-                        <TimelineDot color={step.completed || isCurrent ? 'primary' : 'grey'} />
-                        {last ? null : <TimelineConnector />}
-                      </TimelineSeparator>
-                      <TimelineContent sx={{ py: 0.75 }}>
-                        <Typography variant="subtitle2">{step.label}</Typography>
-                        <Typography variant="caption" sx={{ color: 'text.secondary' }}>
-                          {formatStepTime(step)}
-                        </Typography>
-                      </TimelineContent>
-                    </TimelineItem>
-                  );
-                })}
-              </Timeline>
-            </Box>
-
-            <Stack spacing={2.5} sx={{ flex: 1, minWidth: 0 }}>
-              <Box>
-                <Typography variant="subtitle1" sx={{ mb: 1.5 }}>
-                  Products
+            <Stack spacing={1} sx={{ flex: 1 }}>
+              <Typography variant="subtitle2">Delivery address</Typography>
+              <Typography variant="body2">
+                {details?.label ? `${details.label} · ` : ''}
+                {order.address || 'N/A'}
+              </Typography>
+              {details?.country && (
+                <Typography variant="caption" sx={{ color: 'text.secondary' }}>
+                  {details.country}
                 </Typography>
-                <Stack spacing={1.5}>
-                  {(order.items || []).map((item) => (
-                    <Stack key={item.productId} direction="row" spacing={1.5} alignItems="center">
-                      <Avatar src={item.image} alt={item.title} variant="rounded" sx={{ width: 48, height: 48 }} />
-                      <Box sx={{ minWidth: 0, flex: 1 }}>
-                        <Typography variant="subtitle2" noWrap>
-                          {item.title}
-                        </Typography>
-                        <Typography variant="caption" sx={{ color: 'text.secondary' }}>
-                          Qty {item.quantity}
-                          {item.color ? ` · ${item.color}` : ''}
-                        </Typography>
-                      </Box>
-                      <Typography variant="subtitle2">{fCurrency(item.total)}</Typography>
-                    </Stack>
-                  ))}
-                </Stack>
-              </Box>
+              )}
+            </Stack>
 
-              <Divider />
-
-              <Box>
-                <Typography variant="subtitle1" sx={{ mb: 1.5 }}>
-                  Customer
-                </Typography>
-                <Stack direction="row" spacing={1.5} alignItems="center">
-                  <Avatar src={order.customer?.avatarUrl} alt={order.customer?.name} />
-                  <Box>
-                    <Typography variant="subtitle2">{order.customer?.name || 'N/A'}</Typography>
-                    <Typography variant="caption" sx={{ display: 'block', color: 'text.secondary' }}>
-                      {order.customer?.email}
-                    </Typography>
-                    <Typography variant="caption" sx={{ color: 'text.secondary' }}>
-                      {order.customer?.phone}
-                    </Typography>
-                  </Box>
-                </Stack>
-              </Box>
-
-              <Stack spacing={1}>
-                <Typography variant="subtitle2">Delivery Address</Typography>
-                <Typography variant="body2">
-                  {order.address?.type ? `${order.address.type} · ` : ''}
-                  {order.address?.line || 'N/A'}
-                  {order.address?.city ? `, ${order.address.city}` : ''}
-                </Typography>
-              </Stack>
-
-              <Stack direction="row" spacing={1} alignItems="center" flexWrap="wrap" useFlexGap>
-                <Typography variant="subtitle2">Payment</Typography>
-                <Label variant="soft" color="default">
-                  {getPaymentLabel(order.paymentMethod)}
-                </Label>
-              </Stack>
-
+            <Stack spacing={1} sx={{ flex: 1 }}>
+              <Typography variant="subtitle2">Payment</Typography>
               <Stack direction="row" spacing={1} alignItems="center">
-                <Typography variant="subtitle2">Status</Typography>
-                <Label variant="soft" color={getStatusColor(order.status)}>
-                  {getOrderStatusLabel(order.status)}
+                <Typography variant="body2">{getPaymentLabel(order.paymentMethod)}</Typography>
+                <Label variant="soft" color={paymentStatus.color}>
+                  {paymentStatus.label}
                 </Label>
-              </Stack>
-
-              <Stack spacing={0.5}>
-                <Typography variant="subtitle2">Note</Typography>
-                <Typography variant="body2" sx={{ color: 'text.secondary', whiteSpace: 'pre-wrap' }}>
-                  {order.note?.trim() || 'No note'}
-                </Typography>
-              </Stack>
-
-              <Stack direction="row" justifyContent="space-between" alignItems="center">
-                <Typography variant="body2" sx={{ color: 'text.secondary' }}>
-                  Created {order.createdAt ? fDateTime(order.createdAt) : 'N/A'}
-                </Typography>
-                <Typography variant="h6">{fCurrency(total)}</Typography>
               </Stack>
             </Stack>
           </Stack>
 
-          {!hideVendor && (
-            <Box>
-              <Typography variant="subtitle1" sx={{ mb: 1.5 }}>
-                Vendor
+          {order.stores.map((store) => (
+            <StoreOrderSection key={store._id} store={store} onEdit={onEditStore} />
+          ))}
+
+          {!sellerMode && order.stores.length > 1 && (
+            <Box sx={{ alignSelf: 'flex-end', width: { xs: 1, sm: 320 } }}>
+              <Typography variant="subtitle2" sx={{ mb: 1 }}>
+                Order total
               </Typography>
-              <Stack spacing={1.5}>
-                {vendors.length ? (
-                  vendors.map((vendor) => <ProductStoreCard key={vendor._id} company={vendor} />)
-                ) : (
-                  <Typography variant="body2" sx={{ color: 'text.secondary' }}>
-                    No vendor details
-                  </Typography>
-                )}
-              </Stack>
+              <TotalsRows subtotal={order.subtotal} discountTotal={order.discountTotal} total={order.total} cancelledTotal={order.cancelledTotal} netTotal={order.netTotal} />
             </Box>
           )}
         </Stack>
@@ -209,5 +283,6 @@ OrderViewDialog.propTypes = {
   order: PropTypes.object,
   open: PropTypes.bool,
   onClose: PropTypes.func,
-  hideVendor: PropTypes.bool,
+  onEditStore: PropTypes.func,
+  sellerMode: PropTypes.bool,
 };

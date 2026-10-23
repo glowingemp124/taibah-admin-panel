@@ -15,9 +15,12 @@ import { Label } from 'src/components/label';
 import { ProductStoreCard } from 'src/sections/_active/products-view/product-store-card';
 import { fCurrency } from 'src/utils/format-number';
 import { fDateTime } from 'src/utils/format-time';
+
 import { getStatusColor } from 'src/utils/table-utils';
 
-import { getPaymentLabel, getTransactionStatusLabel } from './transaction-table-config';
+import { getOrderStatusLabel } from 'src/sections/_active/orders-view/order-table-config';
+
+import { getPaymentLabel, getTransactionStatusColor, getTransactionStatusLabel } from './transaction-table-config';
 
 export function TransactionViewDialog({ transaction, open, onClose, hideVendor = false }) {
   if (!transaction) return null;
@@ -50,14 +53,24 @@ export function TransactionViewDialog({ transaction, open, onClose, hideVendor =
 
           <Stack direction="row" spacing={1} alignItems="center">
             <Typography variant="subtitle2">Status</Typography>
-            <Label variant="soft" color={getStatusColor(transaction.status)}>
+            <Label variant="soft" color={getTransactionStatusColor(transaction.status)}>
               {getTransactionStatusLabel(transaction.status)}
             </Label>
           </Stack>
 
           <Stack spacing={0.5}>
             <Typography variant="subtitle2">Order</Typography>
-            <Typography variant="body2">#{transaction.orderId || '—'}</Typography>
+            <Stack direction="row" spacing={1} alignItems="center" flexWrap="wrap" useFlexGap>
+              <Typography variant="body2">
+                {transaction.orderId || '—'}
+                {transaction.orderCode && transaction.orderCode !== transaction.orderId ? ` (order ${transaction.orderCode})` : ''}
+              </Typography>
+              {transaction.orderStatus && (
+                <Label variant="soft" color={getStatusColor(transaction.orderStatus)}>
+                  {getOrderStatusLabel(transaction.orderStatus)}
+                </Label>
+              )}
+            </Stack>
           </Stack>
 
           <Stack spacing={0.5}>
@@ -116,7 +129,11 @@ export function TransactionViewDialog({ transaction, open, onClose, hideVendor =
               Created {transaction.createdAt ? fDateTime(transaction.createdAt) : 'N/A'}
             </Typography>
             <Typography variant="body2" sx={{ color: 'text.secondary' }}>
-              {transaction.paidAt ? `Paid ${fDateTime(transaction.paidAt)}` : 'Not paid yet'}
+              {transaction.paidAt
+                ? `Paid on ${fDateTime(transaction.paidAt)}`
+                : transaction.releasedAt
+                  ? `Released on ${fDateTime(transaction.releasedAt)}`
+                  : 'Held — paid when the store accepts'}
             </Typography>
           </Stack>
         </Stack>

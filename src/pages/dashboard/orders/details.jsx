@@ -15,7 +15,7 @@ export default function Page() {
         <title> {metadata.title}</title>
       </Helmet>
 
-      <OrderListView sellerMode userId={sellerId} orderScope="vendor" />
+      <OrderListView sellerMode sellerId={sellerId} />
     </>
   );
 }

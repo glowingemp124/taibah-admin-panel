@@ -25,6 +25,7 @@ export const STATUS_OPTIONS = [
   { value: 'all', label: 'All', color: 'default' },
   { value: 'draft', label: 'Draft', color: 'default' },
   { value: 'scheduled', label: 'Scheduled', color: 'warning' },
+  { value: 'sending', label: 'Sending', color: 'info' },
   { value: 'sent', label: 'Sent', color: 'success' },
   { value: 'failed', label: 'Failed', color: 'error' },
 ];
@@ -43,14 +44,27 @@ export const RECIPIENT_OPTIONS = [
 ];
 
 export const USER_GROUP_OPTIONS = [
-  { value: 'active', label: 'Active Users' },
-  { value: 'inactive', label: 'Inactive Users' },
+  { value: 'customers', label: 'Customers' },
+  { value: 'sellers', label: 'Sellers' },
+  { value: 'active', label: 'Active customers', hint: 'Ordered in the last 30 days' },
+  { value: 'inactive', label: 'Inactive customers', hint: 'No order in 90 days' },
 ];
 
+// In-App also sends a push to the devices that have the app.
 export const CHANNEL_OPTIONS = [
-  { value: 'in-app', label: 'In-App' },
+  { value: 'in-app', label: 'In-App (also sends a push)' },
   { value: 'email', label: 'Email' },
 ];
+
+export const getBroadcastStatus = (value) => STATUS_OPTIONS.find((option) => option.value === value) || { value, label: value || 'N/A', color: 'default' };
+
+export const labelFrom = (options, value) => options.find((option) => option.value === value)?.label || value || 'N/A';
+
+export const getRecipientLabel = (row) => {
+  if (row.recipient === 'group') return labelFrom(USER_GROUP_OPTIONS, row.userGroup);
+  if (row.recipient === 'user') return row.userQuery || 'Specific User';
+  return labelFrom(RECIPIENT_OPTIONS, row.recipient);
+};
 
 export const SCHEDULE_OPTIONS = [
   { value: 'immediate', label: 'Send Immediately' },

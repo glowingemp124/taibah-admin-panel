@@ -18,11 +18,13 @@ import { Field, Form } from 'src/components/hook-form';
 import { toast } from 'src/components/snackbar';
 
 import { CompactDocumentField } from './document-preview';
+import { isSellerApproved, unfeatureUnlessApproved } from './seller-featured';
 
 import { ID_TYPE_OPTIONS } from 'src/sections/auth/jwt/seller-signup/constants';
 import { saveSellerProfile } from 'src/sections/auth/jwt/seller-signup/storage';
 import { MOCK_COMPANIES, updateMockCompany } from 'src/sections/_active/products-view/mock';
 import { updateMockUser } from 'src/sections/_active/users-view/mock';
+import { isApprovedStatus } from 'src/utils/seller-status';
 
 const VERIFICATION_OPTIONS = [
   { value: 'pending', label: 'Pending review' },
@@ -80,7 +82,7 @@ export function SellerEditDialog({ user, profile, open, onClose, onSuccess }) {
   const defaultValues = useMemo(
     () => ({
       status: user?.status || 'active',
-      verificationStatus: profile?.verificationStatus || 'pending',
+      verificationStatus: isApprovedStatus(profile?.verificationStatus) ? 'verified' : profile?.verificationStatus || 'pending',
       firstName: profile?.firstName || '',
       lastName: profile?.lastName || '',
       email: profile?.email || user?.email || '',
@@ -145,8 +147,10 @@ export function SellerEditDialog({ user, profile, open, onClose, onSuccess }) {
       });
     }
 
+    unfeatureUnlessApproved({ sellerId: user._id }, data.verificationStatus);
+
     toast.success('Seller details updated!');
-    onSuccess?.(nextProfile);
+    onSuccess?.({ ...nextProfile, featured: isSellerApproved(nextProfile) && !!company?.featured });
     onClose();
   });
 

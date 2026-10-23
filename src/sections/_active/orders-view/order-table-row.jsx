@@ -14,15 +14,13 @@ import { fCurrency } from 'src/utils/format-number';
 import { fDate, formatStr } from 'src/utils/format-time';
 import { getStatusColor } from 'src/utils/table-utils';
 
-import { getOrderTotal, getOrderVendors } from './mock';
-import { getOrderStatusLabel, getPaymentLabel } from './order-table-config';
+import { getOrderItems } from './mock';
+import { getOrderStatusLabel, getPaymentLabel, getPaymentStatus } from './order-table-config';
 
 export function OrderTableRow({ row, serialNumber, onViewRow, onEditRow, hideVendor = false }) {
-  const items = row.items || [];
-  const firstTitle = items[0]?.title || 'N/A';
-  const extraCount = Math.max(items.length - 1, 0);
-  const vendors = getOrderVendors(row);
-  const primaryVendor = vendors[0];
+  const items = getOrderItems(row);
+  const quantity = items.reduce((sum, line) => sum + (line.quantity || 0), 0);
+  const paymentStatus = getPaymentStatus(row.paymentStatus);
 
   const actions = [
     {
@@ -35,34 +33,38 @@ export function OrderTableRow({ row, serialNumber, onViewRow, onEditRow, hideVen
     {
       key: 'edit',
       icon: 'solar:pen-bold',
-      tooltip: 'Edit',
+      tooltip: 'Update status',
       onClick: onEditRow,
       hidden: !onEditRow,
     },
-  ];
+  ].filter((action) => !action.hidden);
 
   return (
     <TableRow hover tabIndex={-1}>
       <TableCell sx={{ whiteSpace: 'nowrap' }}>{serialNumber}</TableCell>
 
       <TableCell sx={{ whiteSpace: 'nowrap' }}>
-        <Typography variant="subtitle2">#{row.orderId}</Typography>
+        <Typography variant="subtitle2">{row.code}</Typography>
+        {row.storeOrderCode && (
+          <Typography variant="caption" sx={{ color: 'text.secondary' }}>
+            Your part {row.storeOrderCode}
+          </Typography>
+        )}
       </TableCell>
 
       <TableCell>
         <Stack direction="row" spacing={1.25} alignItems="center">
           <AvatarGroup max={3} sx={{ '& .MuiAvatar-root': { width: 32, height: 32 } }}>
-            {items.map((item) => (
-              <Avatar key={item.productId} alt={item.title} src={item.image} variant="rounded" />
+            {items.map((line) => (
+              <Avatar key={line._id} alt={line.title} src={line.image} variant="rounded" />
             ))}
           </AvatarGroup>
           <Box sx={{ minWidth: 0 }}>
             <Typography variant="body2" noWrap sx={{ maxWidth: 140 }}>
-              {firstTitle}
+              {items[0]?.title || 'N/A'}
             </Typography>
             <Typography variant="caption" sx={{ color: 'text.secondary' }}>
-              {items.length} {items.length === 1 ? 'item' : 'items'}
-              {extraCount > 0 ? ` +${extraCount}` : ''}
+              {quantity} {quantity === 1 ? 'item' : 'items'}
             </Typography>
           </Box>
         </Stack>
@@ -79,26 +81,30 @@ export function OrderTableRow({ row, serialNumber, onViewRow, onEditRow, hideVen
 
       {!hideVendor && (
         <TableCell>
-          {primaryVendor ? (
-            <Stack direction="row" spacing={1.25} alignItems="center">
-              <Avatar src={primaryVendor.logo} alt={primaryVendor.name} variant="rounded" sx={{ width: 32, height: 32 }} />
-              <Box sx={{ minWidth: 0 }}>
-                <Typography variant="body2" noWrap sx={{ maxWidth: 160 }}>
-                  {primaryVendor.name}
+          <Stack spacing={0.75}>
+            {row.stores.map((store) => (
+              <Stack key={store._id} direction="row" spacing={1} alignItems="center">
+                <Avatar src={store.logo} alt={store.name} variant="rounded" sx={{ width: 24, height: 24 }} />
+                <Typography variant="body2" noWrap sx={{ maxWidth: 120 }}>
+                  {store.name}
                 </Typography>
-                <Typography variant="caption" sx={{ color: 'text.secondary' }} noWrap>
-                  {primaryVendor.seller?.name || 'N/A'}
-                  {vendors.length > 1 ? ` +${vendors.length - 1}` : ''}
-                </Typography>
-              </Box>
-            </Stack>
-          ) : (
-            'N/A'
-          )}
+                <Label variant="soft" color={getStatusColor(store.status)}>
+                  {getOrderStatusLabel(store.status)}
+                </Label>
+              </Stack>
+            ))}
+          </Stack>
         </TableCell>
       )}
 
-      <TableCell sx={{ whiteSpace: 'nowrap' }}>{getPaymentLabel(row.paymentMethod)}</TableCell>
+      <TableCell sx={{ whiteSpace: 'nowrap' }}>
+        <Stack spacing={0.5} alignItems="flex-start">
+          <Typography variant="body2">{getPaymentLabel(row.paymentMethod)}</Typography>
+          <Label variant="soft" color={paymentStatus.color}>
+            {paymentStatus.label}
+          </Label>
+        </Stack>
+      </TableCell>
 
       <TableCell>
         <Label variant="soft" color={getStatusColor(row.status)}>
@@ -106,11 +112,16 @@ export function OrderTableRow({ row, serialNumber, onViewRow, onEditRow, hideVen
         </Label>
       </TableCell>
 
-      <TableCell sx={{ whiteSpace: 'nowrap' }}>
-        {row.createdAt ? fDate(row.createdAt, formatStr.paramCase.date) : 'N/A'}
-      </TableCell>
+      <TableCell sx={{ whiteSpace: 'nowrap' }}>{row.createdAt ? fDate(row.createdAt, formatStr.paramCase.date) : 'N/A'}</TableCell>
 
-      <TableCell sx={{ whiteSpace: 'nowrap' }}>{fCurrency(getOrderTotal(row))}</TableCell>
+      <TableCell sx={{ whiteSpace: 'nowrap' }}>
+        <Typography variant="body2">{fCurrency(row.total)}</Typography>
+        {row.cancelledTotal > 0 && (
+          <Typography variant="caption" sx={{ color: 'text.secondary' }}>
+            Net {fCurrency(row.netTotal)}
+          </Typography>
+        )}
+      </TableCell>
 
       <TableCell>
         <GenericTableRowActions actions={actions} />

@@ -33,6 +33,7 @@ export function resolveSellerProfile(user, company) {
     identityDocument: base.identityDocument || null,
     proofOfAddress: base.proofOfAddress || null,
     verificationStatus: base.verificationStatus || (user.status === 'active' ? 'verified' : 'pending'),
+    featured: !!company?.featured,
     status: user.status || 'active',
     favoriteCount: user.favoriteCount ?? 0,
   };

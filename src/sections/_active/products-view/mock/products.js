@@ -31,6 +31,7 @@ export const MOCK_COMPANIES = [
     description: 'A clean, elegant Islamic storefront with curated prayer and home pieces.',
     rating: 5,
     reviews: 921,
+    featured: true,
     seller: sellerFromUser('usr-002'),
   },
   {
@@ -67,6 +68,7 @@ export const MOCK_COMPANIES = [
     description: 'Gifts, fragrances, and pieces chosen with barakah.',
     rating: 5,
     reviews: 540,
+    featured: true,
     seller: sellerFromUser('usr-011'),
   },
 ];
@@ -132,8 +134,24 @@ const variant = (_id, { sku = null, options = [], price, stock, amount = null, u
   imageKeys: images.map((image) => toImageKey(image)),
 });
 
+
+const buildOptionGroups = (row) => {
+  const used = new Set((row.variants || []).flatMap((item) => (item.options || []).map((option) => `${option.attribute?._id}:${option.value}`)));
+  const category = findMockCategory(row.category?._id);
+
+  return (category?.attributes || [])
+    .map((attribute) => findMockOption(attribute._id) || attribute)
+    .map((option) => ({
+      attribute: { _id: option._id, name: option.name, type: option.type },
+      values: option.values.filter((item) => used.has(`${option._id}:${item.value}`)).map((item) => ({ value: item.value, label: item.label })),
+    }))
+    .filter((group) => group.values.length);
+};
+
+const summarize = (row) => ({ ...summarizeProduct(row), optionGroups: buildOptionGroups(row) });
+
 const product = (data) =>
-  summarizeProduct({
+  summarize({
     offPercent: 0,
     discountStartsAt: null,
     discountEndsAt: null,
@@ -398,6 +416,16 @@ export const findMockProduct = (id) => MOCK_PRODUCTS.find((row) => row._id === i
 // Full store record (rating, seller contact) for a product's `company: { _id: sellerId }`.
 export const getProductStore = (row) => MOCK_COMPANIES.find((company) => company.seller?._id === row?.company?._id) || null;
 
+// Featured stores are highlighted in the app's "Featured Stores" strip.
+export const isSellerFeatured = (sellerId) => !!MOCK_COMPANIES.find((company) => company.seller?._id === sellerId)?.featured;
+
+export function setSellerFeatured(sellerId, featured) {
+  const company = MOCK_COMPANIES.find((row) => row.seller?._id === sellerId);
+  if (!company) return null;
+  company.featured = featured;
+  return company;
+}
+
 export const getApprovedCompanies = () =>
   MOCK_COMPANIES.filter((company) => MOCK_USERS.find((user) => user._id === company.seller?._id)?.status === 'active');
 
@@ -421,12 +449,12 @@ export function upsertMockProduct(data) {
   if (data._id) {
     const index = MOCK_PRODUCTS.findIndex((row) => row._id === data._id);
     if (index !== -1) {
-      MOCK_PRODUCTS[index] = summarizeProduct({ ...MOCK_PRODUCTS[index], ...data, updatedAt: now });
+      MOCK_PRODUCTS[index] = summarize({ ...MOCK_PRODUCTS[index], ...data, updatedAt: now });
       return MOCK_PRODUCTS[index];
     }
   }
 
-  const created = summarizeProduct({
+  const created = summarize({
     rating: 0,
     totalReviews: 0,
     favoriteCount: 0,

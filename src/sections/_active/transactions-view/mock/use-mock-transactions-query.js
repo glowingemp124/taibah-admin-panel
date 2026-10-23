@@ -1,6 +1,6 @@
 import { useMemo, useState } from 'react';
 
-import { MOCK_TRANSACTIONS } from './transactions';
+import { getMockTransactions, getTransactionsMeta } from './transactions';
 
 // ----------------------------------------------------------------------
 
@@ -9,7 +9,8 @@ export function useGetMockTransactionsQuery(params = {}) {
   const [revision, setRevision] = useState(0);
 
   return useMemo(() => {
-    let rows = MOCK_TRANSACTIONS.map((row) => ({
+    // Rebuilt each time so store accepts/cancels on the Orders screens show up here.
+    let rows = getMockTransactions().map((row) => ({
       ...row,
       customer: row.customer ? { ...row.customer } : null,
       vendor: row.vendor
@@ -34,6 +35,7 @@ export function useGetMockTransactionsQuery(params = {}) {
         (row) =>
           row.transactionId.toLowerCase().includes(query) ||
           row.orderId?.toLowerCase().includes(query) ||
+          row.orderCode?.toLowerCase().includes(query) ||
           row.reference?.toLowerCase().includes(query) ||
           row.customer?.name?.toLowerCase().includes(query) ||
           row.customer?.email?.toLowerCase().includes(query) ||
@@ -57,10 +59,8 @@ export function useGetMockTransactionsQuery(params = {}) {
       rows = rows.filter((row) => new Date(row.createdAt) <= to);
     }
 
-    const counts = rows.reduce((acc, row) => {
-      acc[row.status] = (acc[row.status] || 0) + 1;
-      return acc;
-    }, {});
+    // Counts and totals cover every status, so the tabs and balance don't change with the active tab.
+    const { counts, totals } = getTransactionsMeta(rows);
 
     if (status && status !== 'all') {
       rows = rows.filter((row) => row.status === status);
@@ -76,6 +76,7 @@ export function useGetMockTransactionsQuery(params = {}) {
         meta: {
           totalRecords: rows.length,
           counts,
+          totals,
         },
       },
       isLoading: false,

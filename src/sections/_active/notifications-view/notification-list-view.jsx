@@ -1,4 +1,4 @@
-import { useCallback, useState } from 'react';
+import { useCallback, useEffect, useState } from 'react';
 
 import Box from '@mui/material/Box';
 import Button from '@mui/material/Button';
@@ -25,8 +25,9 @@ import { calculateSerialNumber } from 'src/utils/table-utils';
 
 import { NotificationFormDialog } from './notification-form-dialog';
 import { NotificationTableRow } from './notification-table-row';
+import { NotificationViewDialog } from './notification-view-dialog';
 import { DEFAULT_FILTERS, FILTER_FIELDS, STATUS_FILTER_FIELD, TABLE_HEAD, TABLE_OPTIONS, TOOLBAR_FILTER_FIELDS } from './notification-table-config';
-import { useGetMockNotificationsQuery } from './mock';
+import { deleteMockBroadcast, findMockBroadcast, isBroadcastEditable, sendMockBroadcast, useGetMockNotificationsQuery } from './mock';
 
 export function NotificationListView() {
   const {
@@ -46,6 +47,7 @@ export function NotificationListView() {
     handlePageChange,
     handleRemoveFilter,
     handleResetFilters,
+    refetch,
   } = useDataTable({
     queryHook: useGetMockNotificationsQuery,
     defaultFilters: DEFAULT_FILTERS,
@@ -57,6 +59,7 @@ export function NotificationListView() {
   const formDialog = useBoolean();
   const confirm = useBoolean();
   const [currentNotification, setCurrentNotification] = useState(null);
+  const [viewing, setViewing] = useState(null);
   const [itemToDelete, setItemToDelete] = useState(null);
   const [isDeleting, setIsDeleting] = useState(false);
 
@@ -78,9 +81,27 @@ export function NotificationListView() {
     setCurrentNotification(null);
   }, [formDialog]);
 
-  const handleResendRow = useCallback((row) => {
-    toast.success(`Notification resent: ${row.title}`);
-  }, []);
+  // POST /admin/broadcasts/:id/send (drafts, scheduled and failed only).
+  const handleSendRow = useCallback(
+    (row) => {
+      if (!sendMockBroadcast(row._id)) return;
+      toast.success(`Sending "${row.title}"…`);
+      setViewing((current) => (current?._id === row._id ? { ...findMockBroadcast(row._id) } : current));
+      refetch();
+    },
+    [refetch]
+  );
+
+  // While anything is sending, check again until it finishes.
+  const anySending = dataList.some((row) => row.status === 'sending');
+  useEffect(() => {
+    if (!anySending) return undefined;
+    const timer = setTimeout(() => {
+      refetch();
+      setViewing((current) => (current ? { ...findMockBroadcast(current._id) } : current));
+    }, 1000);
+    return () => clearTimeout(timer);
+  }, [anySending, dataList, refetch]);
 
   const handleDeleteRow = useCallback(
     (row) => {
@@ -100,11 +121,13 @@ export function NotificationListView() {
   const handleConfirmDelete = useCallback(async () => {
     setIsDeleting(true);
     await new Promise((resolve) => setTimeout(resolve, 400));
-    toast.success('Notification deleted successfully!');
+    deleteMockBroadcast(itemToDelete._id);
+    toast.success('Broadcast deleted successfully!');
     setIsDeleting(false);
     confirm.onFalse();
     setItemToDelete(null);
-  }, [confirm]);
+    refetch();
+  }, [confirm, itemToDelete, refetch]);
 
   const isBusy = isLoading || isFetching;
   const notFound = !isBusy && dataList.length === 0;
@@ -131,7 +154,7 @@ export function NotificationListView() {
           links={[{ name: 'Dashboard', href: paths.adminDashboard.root }, { name: 'Notifications' }]}
           action={
             <Button variant="contained" color="primary" startIcon={<Iconify icon="mingcute:add-line" />} onClick={handleOpenCreate}>
-              New Notification
+              New Broadcast
             </Button>
           }
           sx={{ mb: { xs: 3, md: 5 } }}
@@ -185,7 +208,8 @@ export function NotificationListView() {
                         key={row._id}
                         row={row}
                         serialNumber={calculateSerialNumber(currentPage, itemsPerPage, index)}
-                        onResendRow={() => handleResendRow(row)}
+                        onViewRow={() => setViewing(row)}
+                        onSendRow={() => handleSendRow(row)}
                         onEditRow={() => handleOpenEdit(row)}
                         onDeleteRow={() => handleDeleteRow(row)}
                       />
@@ -203,7 +227,14 @@ export function NotificationListView() {
         </Card>
       </Box>
 
-      <NotificationFormDialog currentNotification={currentNotification} open={formDialog.value} onClose={handleCloseForm} />
+      <NotificationFormDialog currentNotification={currentNotification} open={formDialog.value} onClose={handleCloseForm} onSuccess={refetch} />
+
+      <NotificationViewDialog
+        notification={viewing}
+        open={!!viewing}
+        onClose={() => setViewing(null)}
+        onSend={viewing && isBroadcastEditable(viewing) ? handleSendRow : undefined}
+      />
 
       <ConfirmDialog
         open={confirm.value}

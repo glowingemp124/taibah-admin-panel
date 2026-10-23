@@ -53,7 +53,7 @@ export function AdminLatestOrders({ title, tableData, onViewRow, ...other }) {
             {tableData.map((row) => (
               <TableRow key={row._id} hover>
                 <TableCell>
-                  <Typography variant="subtitle2">#{row.orderId}</Typography>
+                  <Typography variant="subtitle2">{row.code}</Typography>
                 </TableCell>
                 <TableCell>{row.customer?.name || '—'}</TableCell>
                 <TableCell>{row.sellerName || '—'}</TableCell>

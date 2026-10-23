@@ -37,6 +37,7 @@ import { DOCUMENT_ACCEPT, ID_TYPE_OPTIONS, PROOF_OF_ADDRESS_HELP } from 'src/sec
 import { getDefaultSellerProfile, saveSellerProfile } from 'src/sections/auth/jwt/seller-signup/storage';
 import { MOCK_COMPANIES, updateMockCompany } from 'src/sections/_active/products-view/mock';
 import { setUser } from 'src/store/slices/userSlice';
+import { isApprovedStatus } from 'src/utils/seller-status';
 
 const MAX_IMAGE_SIZE = 3145728;
 
@@ -224,8 +225,8 @@ export function SellerProfileView() {
         links={[{ name: 'Dashboard', href: paths.dashboard.root }, { name: 'Profile' }]}
         sx={{ mb: { xs: 3, md: 5 } }}
         action={
-          <Label color={verificationStatus === 'verified' ? 'success' : 'warning'} variant="filled">
-            {verificationStatus === 'verified' ? 'Verified' : 'Pending review'}
+          <Label color={isApprovedStatus(verificationStatus) ? 'success' : 'warning'} variant="filled">
+            {isApprovedStatus(verificationStatus) ? 'Verified' : 'Pending review'}
           </Label>
         }
       />

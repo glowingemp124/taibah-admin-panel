@@ -1,4 +1,4 @@
-import { useCallback, useMemo, useState } from 'react';
+import { useMemo, useState } from 'react';
 
 import Avatar from '@mui/material/Avatar';
 import Button from '@mui/material/Button';
@@ -13,14 +13,12 @@ import { paths } from 'src/routes/paths';
 import { RouterLink } from 'src/routes/components';
 
 import { ChartSelect } from 'src/components/chart';
-import { useBoolean } from 'src/hooks/use-boolean';
 import { useAppRole } from 'src/hooks/use-app-role';
 import { DashboardContent } from 'src/layouts/dashboard';
 import { AnalyticsConversionRates } from 'src/sections/overview/analytics/analytics-conversion-rates';
 import { AnalyticsWebsiteVisits } from 'src/sections/overview/analytics/analytics-website-visits';
-import { OrderEditDialog } from 'src/sections/_active/orders-view/order-edit-dialog';
-import { getOrderTotal, MOCK_ORDERS } from 'src/sections/_active/orders-view/mock';
-import { OrderViewDialog } from 'src/sections/_active/orders-view/order-view-dialog';
+import { OrderEditDialog, OrderViewDialog, useOrderActions } from 'src/sections/_active/orders-view';
+import { getOrderNetTotal, getSellerOrders } from 'src/sections/_active/orders-view/mock';
 import { MOCK_COMPANIES, MOCK_PRODUCTS } from 'src/sections/_active/products-view/mock';
 import { MOCK_USERS } from 'src/sections/_active/users-view/mock';
 import { fCurrency, fNumber, fShortenNumber } from 'src/utils/format-number';
@@ -67,18 +65,15 @@ export function SellerOverviewView() {
   const company = MOCK_COMPANIES.find((row) => row.seller?._id === sellerId);
   const [revision, setRevision] = useState(0);
   const [orderTrendPeriod, setOrderTrendPeriod] = useState('Monthly');
-  const viewDialog = useBoolean();
-  const editDialog = useBoolean();
-  const [currentOrder, setCurrentOrder] = useState(null);
   const orderTrend = ORDER_TREND[orderTrendPeriod];
 
   const products = MOCK_PRODUCTS.filter((row) => row.company?._id === sellerId);
-  const orders = useMemo(
-    () => MOCK_ORDERS.filter((row) => (row.items || []).some((item) => item.vendor?.seller?._id === sellerId)),
-    [revision, sellerId]
-  );
+  // Only the seller's part of each order: status and totals are theirs.
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  const orders = useMemo(() => getSellerOrders(sellerId), [revision, sellerId]);
+  const orderActions = useOrderActions({ sellerId, sellerMode: true, onChanged: () => setRevision((value) => value + 1) });
 
-  const sales = orders.filter((row) => row.status !== 'cancelled').reduce((sum, row) => sum + getOrderTotal(row), 0);
+  const sales = orders.filter((row) => row.status !== 'cancelled').reduce((sum, row) => sum + getOrderNetTotal(row), 0);
   const customers = new Set(orders.map((row) => row.customer?._id).filter(isStoreClient));
   const activeProducts = products.filter((row) => (row.status || 'active') === 'active');
   const lowStockItems = products.filter((row) => (row.stock ?? 0) <= LOW_STOCK_THRESHOLD);
@@ -138,31 +133,6 @@ export function SellerOverviewView() {
     [products]
   );
 
-  const handleOpenView = useCallback(
-    (row) => {
-      setCurrentOrder(row);
-      viewDialog.onTrue();
-    },
-    [viewDialog]
-  );
-
-  const handleOpenEdit = useCallback(
-    (row) => {
-      setCurrentOrder(row);
-      editDialog.onTrue();
-    },
-    [editDialog]
-  );
-
-  const handleCloseView = useCallback(() => {
-    viewDialog.onFalse();
-    if (!editDialog.value) setCurrentOrder(null);
-  }, [viewDialog, editDialog]);
-
-  const handleCloseEdit = useCallback(() => {
-    editDialog.onFalse();
-    if (!viewDialog.value) setCurrentOrder(null);
-  }, [editDialog, viewDialog]);
 
   return (
     <DashboardContent maxWidth="xl">
@@ -404,8 +374,8 @@ export function SellerOverviewView() {
             title="Recent Orders"
             tableData={latestOrders}
             viewAllHref={paths.dashboard.orders.root}
-            onViewRow={handleOpenView}
-            onEditRow={handleOpenEdit}
+            onViewRow={orderActions.openView}
+            onEditRow={(row) => orderActions.openEdit(row, row.stores[0])}
             sx={CARD_SX}
           />
         </Grid>
@@ -420,9 +390,23 @@ export function SellerOverviewView() {
         </Grid>
       </Grid>
 
-      <OrderViewDialog order={currentOrder} open={viewDialog.value} onClose={handleCloseView} hideVendor />
+      <OrderViewDialog
+        sellerMode
+        order={orderActions.viewOrder}
+        open={!!orderActions.viewOrder}
+        onClose={orderActions.closeView}
+        onEditStore={(store) => orderActions.openEdit(orderActions.viewOrder, store)}
+      />
 
-      <OrderEditDialog currentOrder={editDialog.value ? currentOrder : null} open={editDialog.value} onClose={handleCloseEdit} onSuccess={() => setRevision((value) => value + 1)} />
+      <OrderEditDialog
+        order={orderActions.editTarget?.order}
+        storeOrder={orderActions.editTarget?.store}
+        role={orderActions.role}
+        actor={orderActions.actor}
+        open={!!orderActions.editTarget}
+        onClose={orderActions.closeEdit}
+        onSuccess={orderActions.handleEdited}
+      />
     </DashboardContent>
   );
 }

@@ -11,9 +11,8 @@ import { GenericTableRowActions } from 'src/components/generic-table/table-row-a
 import { Label } from 'src/components/label';
 import { fCurrency } from 'src/utils/format-number';
 import { fDate, formatStr } from 'src/utils/format-time';
-import { getStatusColor } from 'src/utils/table-utils';
 
-import { getPaymentLabel, getTransactionStatusLabel } from './transaction-table-config';
+import { getPaymentLabel, getTransactionStatusColor, getTransactionStatusLabel } from './transaction-table-config';
 
 export function TransactionTableRow({ row, serialNumber, onViewRow, hideVendor = false }) {
   const actions = [
@@ -35,7 +34,7 @@ export function TransactionTableRow({ row, serialNumber, onViewRow, hideVendor =
       </TableCell>
 
       <TableCell sx={{ whiteSpace: 'nowrap' }}>
-        <Typography variant="body2">#{row.orderId || '—'}</Typography>
+        <Typography variant="body2">{row.orderId || '—'}</Typography>
       </TableCell>
 
       <TableCell>
@@ -72,7 +71,7 @@ export function TransactionTableRow({ row, serialNumber, onViewRow, hideVendor =
       <TableCell sx={{ whiteSpace: 'nowrap' }}>{fCurrency(row.amount)}</TableCell>
 
       <TableCell>
-        <Label variant="soft" color={getStatusColor(row.status)}>
+        <Label variant="soft" color={getTransactionStatusColor(row.status)}>
           {getTransactionStatusLabel(row.status)}
         </Label>
       </TableCell>

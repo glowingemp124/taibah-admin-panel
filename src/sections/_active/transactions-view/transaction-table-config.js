@@ -23,16 +23,13 @@ export const TABLE_HEAD = [
 
 export const TRANSACTION_STATUS_OPTIONS = [
   { value: 'all', label: 'All', color: 'default' },
-  { value: 'paid', label: 'Paid', color: 'success' },
-  { value: 'pending', label: 'Pending', color: 'warning' },
-  { value: 'failed', label: 'Failed', color: 'error' },
-  { value: 'refunded', label: 'Refunded', color: 'info' },
+  { value: 'captured', label: 'Paid', color: 'success' },
+  { value: 'authorized', label: 'Held', color: 'warning' },
+  { value: 'released', label: 'Released', color: 'default' },
 ];
 
-export const PAYMENT_OPTIONS = [
-  { value: 'cash-on-delivery', label: 'Cash On Delivery' },
-  { value: 'card', label: 'Credit / Debit Card' },
-];
+// Only card exists.
+export const PAYMENT_OPTIONS = [{ value: 'card', label: 'Credit / Debit Card' }];
 
 export const FILTER_FIELDS = [
   createFilterField.status({
@@ -42,14 +39,6 @@ export const FILTER_FIELDS = [
 
   createFilterField.search({
     placeholder: 'Search transaction ID, order ID, customer or vendor...',
-  }),
-
-  createFilterField.select({
-    key: 'paymentMethod',
-    label: 'Payment',
-    placeholder: 'Payment',
-    defaultValue: 'all',
-    options: [{ value: 'all', label: 'All Payments' }, ...PAYMENT_OPTIONS],
   }),
 
   createFilterField.dateRange({
@@ -71,8 +60,8 @@ export const STATUS_FILTER_FIELD = FILTER_FIELDS.find((field) => field.type === 
 
 export const TOOLBAR_FILTER_FIELDS = FILTER_FIELDS.filter((field) => field.type !== 'status');
 
-export const getTransactionStatusLabel = (value) =>
-  TRANSACTION_STATUS_OPTIONS.find((option) => option.value === value)?.label || value || 'N/A';
+export const getTransactionStatusColor = (value) => TRANSACTION_STATUS_OPTIONS.find((option) => option.value === value)?.color || 'default';
 
-export const getPaymentLabel = (value) =>
-  PAYMENT_OPTIONS.find((option) => option.value === value)?.label || value || 'N/A';
+export const getTransactionStatusLabel = (value) => TRANSACTION_STATUS_OPTIONS.find((option) => option.value === value)?.label || value || 'N/A';
+
+export const getPaymentLabel = (value) => PAYMENT_OPTIONS.find((option) => option.value === value)?.label || value || 'N/A';

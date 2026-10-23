@@ -20,6 +20,7 @@ import { TableHeadCustom } from 'src/components/table';
 import { fDate, formatStr } from 'src/utils/format-time';
 import { getStatusColor } from 'src/utils/table-utils';
 
+import { getOrderItems } from 'src/sections/_active/orders-view/mock';
 import { getOrderStatusLabel } from 'src/sections/_active/orders-view/order-table-config';
 
 const TABLE_HEAD = [
@@ -77,12 +78,12 @@ export function SellerLatestOrders({ title, subheader, tableData, viewAllHref, o
             {tableData.map((row) => (
               <TableRow key={row._id} hover>
                 <TableCell>
-                  <Typography variant="subtitle2">#{row.orderId}</Typography>
+                  <Typography variant="subtitle2">{row.code}</Typography>
                 </TableCell>
 
                 <TableCell>{row.customer?.name || 'N/A'}</TableCell>
 
-                <TableCell>{(row.items || []).reduce((sum, item) => sum + (item.quantity || 0), 0)}</TableCell>
+                <TableCell>{getOrderItems(row).reduce((sum, item) => sum + (item.quantity || 0), 0)}</TableCell>
 
                 <TableCell>
                   <Label variant="soft" color={getStatusColor(row.status)}>

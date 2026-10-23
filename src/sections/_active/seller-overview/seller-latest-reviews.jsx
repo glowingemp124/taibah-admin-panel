@@ -55,7 +55,7 @@ export function SellerLatestReviews({ title, subheader, tableData, viewAllHref, 
           <TableBody>
             {tableData.map((row) => (
               <TableRow
-                key={row._id}
+                key={`${row.productId}-${row._id}`}
                 hover
                 sx={{ cursor: row.productId ? 'pointer' : 'default' }}
                 onClick={() => row.productId && router.push(paths.dashboard.products.details(row.productId))}

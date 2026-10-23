@@ -7,13 +7,14 @@ import TableCell from '@mui/material/TableCell';
 import TableRow from '@mui/material/TableRow';
 
 import { GenericTableRowActions } from 'src/components/generic-table/table-row-actions';
+import { Iconify } from 'src/components/iconify';
 import { Label } from 'src/components/label';
 import { fDate, formatStr } from 'src/utils/format-time';
 import { getStatusColor } from 'src/utils/table-utils';
 
 import { USER_TYPE_OPTIONS } from './user-table-config';
 
-export function UserTableRow({ row, serialNumber, onViewRow, onEditRow, hideUserType = false, hideActions = false }) {
+export function UserTableRow({ row, serialNumber, onViewRow, onEditRow, hideUserType = false, hideActions = false, showFeatured = false }) {
   const actions = [
     {
       key: 'view',
@@ -66,6 +67,18 @@ export function UserTableRow({ row, serialNumber, onViewRow, onEditRow, hideUser
         {row?.createdAt ? fDate(row.createdAt, formatStr.paramCase.date) : 'N/A'}
       </TableCell>
 
+      {showFeatured && (
+        <TableCell>
+          {row.featured ? (
+            <Label variant="soft" color="warning" startIcon={<Iconify icon="solar:star-bold" width={14} />}>
+              Featured
+            </Label>
+          ) : (
+            '—'
+          )}
+        </TableCell>
+      )}
+
       <TableCell>
         <Label variant="soft" color={getStatusColor(row.status)}>
           {row.status || 'N/A'}
@@ -88,4 +101,5 @@ UserTableRow.propTypes = {
   onEditRow: PropTypes.func,
   hideUserType: PropTypes.bool,
   hideActions: PropTypes.bool,
+  showFeatured: PropTypes.bool,
 };

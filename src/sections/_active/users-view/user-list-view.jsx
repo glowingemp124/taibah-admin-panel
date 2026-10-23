@@ -22,6 +22,8 @@ import { calculateSerialNumber } from 'src/utils/table-utils';
 import { DEFAULT_FILTERS, FILTER_FIELDS, STATUS_FILTER_FIELD, TABLE_HEAD, TABLE_OPTIONS, TOOLBAR_FILTER_FIELDS } from './user-table-config';
 import { UserStatusDialog } from './user-status-dialog';
 import { UserTableRow } from './user-table-row';
+import { isSellerFeatured } from 'src/sections/_active/products-view/mock';
+
 import { useGetMockUsersQuery } from './mock';
 
 export function UserListView({
@@ -31,6 +33,7 @@ export function UserListView({
   role,
   detailsHref,
   hideUserType,
+  showFeatured = false,
 }) {
   const router = useRouter();
   const appPaths = sellerMode ? paths.dashboard : paths.adminDashboard;
@@ -91,7 +94,7 @@ export function UserListView({
     if (hideTypeColumn && column.id === 'userType') return false;
     if (sellerMode && column.id === 'action') return false;
     return true;
-  });
+  }).flatMap((column) => (showFeatured && column.id === 'status' ? [{ id: 'featured', label: 'Featured', width: 120 }, column] : [column]));
   const toolbarFields = hideTypeColumn ? TOOLBAR_FILTER_FIELDS.filter((field) => field.key !== 'userType') : TOOLBAR_FILTER_FIELDS;
 
   const getStatusCount = useCallback(
@@ -158,10 +161,11 @@ export function UserListView({
                     dataList.map((row, index) => (
                       <UserTableRow
                         key={row._id}
-                        row={row}
+                        row={showFeatured ? { ...row, featured: isSellerFeatured(row._id) } : row}
                         serialNumber={calculateSerialNumber(currentPage, itemsPerPage, index)}
                         hideUserType={hideTypeColumn}
                         hideActions={sellerMode}
+                        showFeatured={showFeatured}
                         onViewRow={
                           sellerMode
                             ? undefined
@@ -195,4 +199,5 @@ UserListView.propTypes = {
   role: PropTypes.oneOf(['buyer', 'seller']),
   detailsHref: PropTypes.func,
   hideUserType: PropTypes.bool,
+  showFeatured: PropTypes.bool,
 };

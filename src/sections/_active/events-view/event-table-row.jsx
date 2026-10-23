@@ -9,12 +9,16 @@ import Typography from '@mui/material/Typography';
 
 import { GenericTableRowActions } from 'src/components/generic-table/table-row-actions';
 import { Label } from 'src/components/label';
+import { fNumber } from 'src/utils/format-number';
 import { fDate, formatStr } from 'src/utils/format-time';
 import { getStatusColor } from 'src/utils/table-utils';
 
+import { EventDiscountLabel } from './event-shared';
 import { getEventPlacementLabel, getEventStatusLabel, getEventTypeLabel } from './event-table-config';
 
-export function EventTableRow({ row, serialNumber, onViewRow, onEditRow, onDeleteRow }) {
+export function EventTableRow({ row, serialNumber, onViewRow, onEditRow, onManageProducts, onDeleteRow }) {
+  const isCollection = row.type === 'product-collection';
+
   const actions = [
     {
       key: 'view',
@@ -31,13 +35,20 @@ export function EventTableRow({ row, serialNumber, onViewRow, onEditRow, onDelet
       hidden: !onEditRow,
     },
     {
+      key: 'manage',
+      icon: 'solar:box-bold',
+      tooltip: 'Manage products',
+      onClick: onManageProducts,
+      hidden: !onManageProducts || !isCollection,
+    },
+    {
       key: 'delete',
       icon: 'solar:trash-bin-trash-bold',
       tooltip: 'Delete',
       onClick: onDeleteRow,
       hidden: !onDeleteRow,
     },
-  ];
+  ].filter((action) => !action.hidden);
 
   return (
     <TableRow hover tabIndex={-1}>
@@ -61,6 +72,12 @@ export function EventTableRow({ row, serialNumber, onViewRow, onEditRow, onDelet
       <TableCell sx={{ whiteSpace: 'nowrap' }}>{getEventPlacementLabel(row.placement)}</TableCell>
 
       <TableCell sx={{ whiteSpace: 'nowrap' }}>
+        <EventDiscountLabel percent={row.discountPercent} />
+      </TableCell>
+
+      <TableCell sx={{ whiteSpace: 'nowrap' }}>{isCollection ? fNumber(row.products?.length || 0) : '—'}</TableCell>
+
+      <TableCell sx={{ whiteSpace: 'nowrap' }}>
         {row.startAt ? fDate(row.startAt, formatStr.paramCase.date) : 'N/A'}
         {' – '}
         {row.endAt ? fDate(row.endAt, formatStr.paramCase.date) : 'N/A'}
@@ -72,9 +89,7 @@ export function EventTableRow({ row, serialNumber, onViewRow, onEditRow, onDelet
         </Label>
       </TableCell>
 
-      <TableCell sx={{ whiteSpace: 'nowrap' }}>
-        {row.createdAt ? fDate(row.createdAt, formatStr.paramCase.date) : 'N/A'}
-      </TableCell>
+      <TableCell sx={{ whiteSpace: 'nowrap' }}>{row.createdAt ? fDate(row.createdAt, formatStr.paramCase.date) : 'N/A'}</TableCell>
 
       <TableCell>
         <GenericTableRowActions actions={actions} />
@@ -88,5 +103,6 @@ EventTableRow.propTypes = {
   serialNumber: PropTypes.number.isRequired,
   onViewRow: PropTypes.func,
   onEditRow: PropTypes.func,
+  onManageProducts: PropTypes.func,
   onDeleteRow: PropTypes.func,
 };

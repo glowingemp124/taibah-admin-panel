@@ -16,6 +16,7 @@ import { ID_TYPE_OPTIONS } from 'src/sections/auth/jwt/seller-signup/constants';
 import { formatCountry } from 'src/sections/auth/jwt/seller-signup/storage';
 
 import { DocumentTile } from './document-preview';
+import { isApprovedStatus } from 'src/utils/seller-status';
 
 function InfoItem({ label, value }) {
   return (
@@ -70,7 +71,7 @@ function idTypeLabel(value) {
 }
 
 function verificationColor(status) {
-  if (status === 'verified') return 'success';
+  if (isApprovedStatus(status)) return 'success';
   if (status === 'rejected') return 'error';
   return 'warning';
 }

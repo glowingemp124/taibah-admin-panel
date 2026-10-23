@@ -1,15 +1,15 @@
 import { useMemo, useState } from 'react';
 
-import { hydrateEvent, MOCK_EVENTS } from './events';
+import { hydrateEvent, isEventOpenToStore, MOCK_EVENTS } from './events';
 
 // ----------------------------------------------------------------------
 
 export function useGetMockEventsQuery(params = {}) {
-  const { search = '', page = 0, status = '', limit = 10, type = '', startDate, endDate, upcomingOnly = false } = params;
+  const { search = '', page = 0, status = '', limit = 10, type = '', startDate, endDate } = params;
   const [revision, setRevision] = useState(0);
 
   return useMemo(() => {
-    let rows = MOCK_EVENTS.map((row) => hydrateEvent({ ...row, productIds: [...(row.productIds || [])] }));
+    let rows = MOCK_EVENTS.map((row) => hydrateEvent(row));
 
     if (search) {
       const query = search.toLowerCase();
@@ -20,10 +20,6 @@ export function useGetMockEventsQuery(params = {}) {
           row.placement?.toLowerCase().includes(query) ||
           row.ctaLabel?.toLowerCase().includes(query)
       );
-    }
-
-    if (upcomingOnly) {
-      rows = rows.filter((row) => row.runtimeStatus === 'scheduled' || row.runtimeStatus === 'active');
     }
 
     if (type && type !== 'all') {
@@ -67,5 +63,20 @@ export function useGetMockEventsQuery(params = {}) {
       error: undefined,
       refetch: () => setRevision((value) => value + 1),
     };
-  }, [search, page, status, limit, type, startDate, endDate, upcomingOnly, revision]);
+  }, [search, page, status, limit, type, startDate, endDate, revision]);
+}
+
+// Seller page: published events open to the seller's store that haven't ended.
+export function useGetMockSellerEvents(sellerId) {
+  const [revision, setRevision] = useState(0);
+
+  const events = useMemo(
+    () =>
+      MOCK_EVENTS.map((row) => hydrateEvent(row))
+        .filter((row) => isEventOpenToStore(row, sellerId) && (row.runtimeStatus === 'active' || row.runtimeStatus === 'scheduled'))
+        .sort((a, b) => new Date(a.startAt) - new Date(b.startAt)),
+    [sellerId, revision]
+  );
+
+  return { events, refetch: () => setRevision((value) => value + 1) };
 }

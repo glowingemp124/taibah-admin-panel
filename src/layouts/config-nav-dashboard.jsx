@@ -31,7 +31,7 @@ export const navData = [
     items: [
       { title: 'Products', path: paths.dashboard.products.root, icon: ICONS.product, deepMatch: true },
       { title: 'Orders', path: paths.dashboard.orders.root, icon: ICONS.order, deepMatch: true },
-      // { title: 'Events', path: paths.dashboard.events, icon: ICONS.calendar },
+      { title: 'Events', path: paths.dashboard.events, icon: ICONS.calendar },
       { title: 'Transactions', path: paths.dashboard.transactions, icon: ICONS.invoice },
       { title: 'Customers', path: paths.dashboard.customers, icon: ICONS.user },
       { title: 'Reviews', path: paths.dashboard.reviews, icon: ICONS.file },

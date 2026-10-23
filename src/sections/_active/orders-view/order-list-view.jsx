@@ -1,5 +1,6 @@
 import PropTypes from 'prop-types';
-import { useCallback, useState } from 'react';
+import { useCallback, useEffect } from 'react';
+import { useSearchParams } from 'react-router-dom';
 
 import Box from '@mui/material/Box';
 import Card from '@mui/material/Card';
@@ -15,21 +16,26 @@ import { FlexibleTableToolbar } from 'src/components/generic-table/table-toolbar
 import { StatusTabsFilterWrapper } from 'src/components/generic-table/tabs-filter-wrapper';
 import { Scrollbar } from 'src/components/scrollbar';
 import { TableEmptyRows, TableHeadCustom, TableNoData, TablePaginationCustom } from 'src/components/table';
-import { useBoolean } from 'src/hooks/use-boolean';
 import { useDataTable } from 'src/hooks/use-data-table';
 import { calculateSerialNumber } from 'src/utils/table-utils';
 
-import { useGetMockOrdersQuery } from './mock';
+import { useOrderActions } from './use-order-actions';
+import { findMockOrder, toSellerOrder, useGetMockOrdersQuery } from './mock';
 import { OrderEditDialog } from './order-edit-dialog';
 import { DEFAULT_FILTERS, FILTER_FIELDS, STATUS_FILTER_FIELD, TABLE_HEAD, TABLE_OPTIONS, TOOLBAR_FILTER_FIELDS } from './order-table-config';
 import { OrderTableRow } from './order-table-row';
 import { OrderViewDialog } from './order-view-dialog';
 
-export function OrderListView({ embedded = false, userId, orderScope = 'customer', sellerMode = false }) {
+
+export function OrderListView({ embedded = false, userId, sellerId, sellerMode = false }) {
   const appPaths = sellerMode ? paths.dashboard : paths.adminDashboard;
   const transformFilters = useCallback(
-    (params) => (userId ? { ...params, userId, orderScope } : params),
-    [userId, orderScope]
+    (params) => ({
+      ...params,
+      ...(userId && { userId }),
+      ...(sellerId && { sellerId }),
+    }),
+    [userId, sellerId]
   );
 
   const {
@@ -59,44 +65,30 @@ export function OrderListView({ embedded = false, userId, orderScope = 'customer
     transformFilters,
   });
 
-  const formDialog = useBoolean();
-  const viewDialog = useBoolean();
-  const [currentOrder, setCurrentOrder] = useState(null);
+  const actions = useOrderActions({ sellerId, sellerMode, onChanged: refetch });
 
-  const handleOpenEdit = useCallback(
-    (row) => {
-      setCurrentOrder(row);
-      formDialog.onTrue();
-    },
-    [formDialog]
-  );
+  // ?view=<orderId> (e.g. from a notification) opens that order's view, then leaves the URL clean.
+  const [searchParams, setSearchParams] = useSearchParams();
+  const viewId = embedded ? null : searchParams.get('view');
 
-  const handleOpenView = useCallback(
-    (row) => {
-      setCurrentOrder(row);
-      viewDialog.onTrue();
-    },
-    [viewDialog]
-  );
+  useEffect(() => {
+    if (!viewId) return;
+    const found = findMockOrder(viewId);
+    const order = found && (sellerId ? toSellerOrder(found, sellerId) : found);
+    if (order) actions.openView(order);
 
-  const handleCloseForm = useCallback(() => {
-    formDialog.onFalse();
-    if (!viewDialog.value) {
-      setCurrentOrder(null);
-    }
-  }, [formDialog, viewDialog]);
-
-  const handleCloseView = useCallback(() => {
-    viewDialog.onFalse();
-    if (!formDialog.value) {
-      setCurrentOrder(null);
-    }
-  }, [formDialog, viewDialog]);
+    const next = new URLSearchParams(searchParams);
+    next.delete('view');
+    setSearchParams(next, { replace: true });
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [viewId]);
 
   const isBusy = isLoading || isFetching;
   const notFound = !isBusy && dataList.length === 0;
   const isDense = TABLE_OPTIONS.dense;
-  const tableHead = sellerMode ? TABLE_HEAD.filter((column) => column.id !== 'vendor') : TABLE_HEAD;
+  // One store per row when scoped to a seller, so the vendor column adds nothing.
+  const hideVendor = sellerMode || !!sellerId;
+  const tableHead = hideVendor ? TABLE_HEAD.filter((column) => column.id !== 'vendor') : TABLE_HEAD;
 
   const getStatusCount = useCallback(
     (status) => {
@@ -112,70 +104,70 @@ export function OrderListView({ embedded = false, userId, orderScope = 'customer
   );
 
   const table = (
-        <Card>
-          <StatusTabsFilterWrapper filterField={STATUS_FILTER_FIELD} value={filters.state.status} onChange={handleFilterChange} getCount={getStatusCount} />
+    <Card>
+      <StatusTabsFilterWrapper filterField={STATUS_FILTER_FIELD} value={filters.state.status} onChange={handleFilterChange} getCount={getStatusCount} />
 
-          <FlexibleTableToolbar
-            filterFields={TOOLBAR_FILTER_FIELDS}
-            filterValues={{
-              ...filters.state,
-              search: searchDisplayValue,
+      <FlexibleTableToolbar
+        filterFields={TOOLBAR_FILTER_FIELDS}
+        filterValues={{
+          ...filters.state,
+          search: searchDisplayValue,
+        }}
+        onFilterChange={handleFilterChange}
+        onSearchChange={handleSearchChange}
+        size={TABLE_OPTIONS.filterSize}
+      />
+
+      {canReset && (
+        <FlexibleTableFiltersResult
+          activeFilters={activeFilters}
+          totalResults={totalRecords}
+          onResetFilters={handleResetFilters}
+          onRemoveFilter={handleRemoveFilter}
+          sx={{ p: 2.5, pt: 0 }}
+        />
+      )}
+
+      <Box sx={{ position: 'relative' }}>
+        {isFetching && (
+          <LinearProgress
+            sx={{
+              position: 'absolute',
+              top: 0,
+              left: 0,
+              right: 0,
+              zIndex: 9,
             }}
-            onFilterChange={handleFilterChange}
-            onSearchChange={handleSearchChange}
-            size={TABLE_OPTIONS.filterSize}
           />
+        )}
 
-          {canReset && (
-            <FlexibleTableFiltersResult
-              activeFilters={activeFilters}
-              totalResults={totalRecords}
-              onResetFilters={handleResetFilters}
-              onRemoveFilter={handleRemoveFilter}
-              sx={{ p: 2.5, pt: 0 }}
-            />
-          )}
+        <Scrollbar>
+          <Table size={isDense ? 'small' : 'medium'} sx={{ minWidth: hideVendor ? 1000 : 1260 }}>
+            <TableHeadCustom headLabel={tableHead} rowCount={dataList.length} />
 
-          <Box sx={{ position: 'relative' }}>
-            {isFetching && (
-              <LinearProgress
-                sx={{
-                  position: 'absolute',
-                  top: 0,
-                  left: 0,
-                  right: 0,
-                  zIndex: 9,
-                }}
-              />
-            )}
+            <TableBody>
+              {!isBusy &&
+                dataList.map((row, index) => (
+                  <OrderTableRow
+                    key={row._id}
+                    row={row}
+                    serialNumber={calculateSerialNumber(currentPage, itemsPerPage, index)}
+                    hideVendor={hideVendor}
+                    onViewRow={() => actions.openView(row)}
+                    onEditRow={sellerMode ? () => actions.openEdit(row, row.stores[0]) : undefined}
+                  />
+                ))}
 
-            <Scrollbar>
-              <Table size={isDense ? 'small' : 'medium'} sx={{ minWidth: sellerMode ? 980 : 1180 }}>
-                <TableHeadCustom headLabel={tableHead} rowCount={dataList.length} />
+              {isBusy && <TableEmptyRows height={isDense ? 56 : 76} emptyRows={itemsPerPage} />}
 
-                <TableBody>
-                  {!isBusy &&
-                    dataList.map((row, index) => (
-                      <OrderTableRow
-                        key={row._id}
-                        row={row}
-                        serialNumber={calculateSerialNumber(currentPage, itemsPerPage, index)}
-                        hideVendor={sellerMode}
-                        onViewRow={() => handleOpenView(row)}
-                        onEditRow={() => handleOpenEdit(row)}
-                      />
-                    ))}
+              <TableNoData notFound={notFound} />
+            </TableBody>
+          </Table>
+        </Scrollbar>
+      </Box>
 
-                  {isBusy && <TableEmptyRows height={isDense ? 56 : 76} emptyRows={itemsPerPage} />}
-
-                  <TableNoData notFound={notFound} />
-                </TableBody>
-              </Table>
-            </Scrollbar>
-          </Box>
-
-          <TablePaginationCustom page={currentPage} count={totalRecords} rowsPerPage={itemsPerPage} rowsPerPageOptions={[]} onPageChange={handlePageChange} />
-        </Card>
+      <TablePaginationCustom page={currentPage} count={totalRecords} rowsPerPage={itemsPerPage} rowsPerPageOptions={[]} onPageChange={handlePageChange} />
+    </Card>
   );
 
   return (
@@ -184,18 +176,28 @@ export function OrderListView({ embedded = false, userId, orderScope = 'customer
         table
       ) : (
         <Box sx={{ px: { xs: 2, md: 5 }, pb: 5, pt: 3, display: 'flex', flexDirection: 'column' }}>
-          <CustomBreadcrumbs
-            heading="Orders"
-            links={[{ name: 'Dashboard', href: appPaths.root }, { name: 'Orders' }]}
-            sx={{ mb: { xs: 3, md: 5 } }}
-          />
+          <CustomBreadcrumbs heading="Orders" links={[{ name: 'Dashboard', href: appPaths.root }, { name: 'Orders' }]} sx={{ mb: { xs: 3, md: 5 } }} />
           {table}
         </Box>
       )}
 
-      <OrderViewDialog order={currentOrder} open={viewDialog.value} onClose={handleCloseView} hideVendor={sellerMode} />
+      <OrderViewDialog
+        order={actions.viewOrder}
+        open={!!actions.viewOrder}
+        onClose={actions.closeView}
+        sellerMode={sellerMode}
+        onEditStore={(store) => actions.openEdit(actions.viewOrder, store)}
+      />
 
-      <OrderEditDialog currentOrder={formDialog.value ? currentOrder : null} open={formDialog.value} onClose={handleCloseForm} onSuccess={refetch} />
+      <OrderEditDialog
+        order={actions.editTarget?.order}
+        storeOrder={actions.editTarget?.store}
+        role={actions.role}
+        actor={actions.actor}
+        open={!!actions.editTarget}
+        onClose={actions.closeEdit}
+        onSuccess={actions.handleEdited}
+      />
     </>
   );
 }
@@ -203,6 +205,6 @@ export function OrderListView({ embedded = false, userId, orderScope = 'customer
 OrderListView.propTypes = {
   embedded: PropTypes.bool,
   userId: PropTypes.string,
-  orderScope: PropTypes.oneOf(['customer', 'vendor']),
+  sellerId: PropTypes.string,
   sellerMode: PropTypes.bool,
 };

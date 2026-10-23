@@ -1,4 +1,3 @@
-import PropTypes from 'prop-types';
 import { useCallback, useState } from 'react';
 
 import Box from '@mui/material/Box';
@@ -25,14 +24,13 @@ import { useDataTable } from 'src/hooks/use-data-table';
 import { calculateSerialNumber } from 'src/utils/table-utils';
 
 import { EventFormDialog } from './event-form-dialog';
+import { EventProductsDialog } from './event-products-dialog';
 import { EventTableRow } from './event-table-row';
 import { EventViewDialog } from './event-view-dialog';
 import { DEFAULT_FILTERS, FILTER_FIELDS, STATUS_FILTER_FIELD, TABLE_HEAD, TABLE_OPTIONS, TOOLBAR_FILTER_FIELDS } from './event-table-config';
-import { deleteMockEvent, useGetMockEventsQuery } from './mock';
+import { deleteMockEvent, hydrateEvent, useGetMockEventsQuery } from './mock';
 
-export function EventListView({ readOnly = false, upcomingOnly = false }) {
-  const appPaths = readOnly ? paths.dashboard : paths.adminDashboard;
-  const transformFilters = useCallback((params) => (upcomingOnly ? { ...params, upcomingOnly: true } : params), [upcomingOnly]);
+export function EventListView() {
 
   const {
     filters,
@@ -58,13 +56,13 @@ export function EventListView({ readOnly = false, upcomingOnly = false }) {
     filterFields: FILTER_FIELDS,
     defaultRowsPerPage: 10,
     debounceMs: 500,
-    transformFilters,
   });
 
   const formDialog = useBoolean();
   const viewDialog = useBoolean();
   const confirm = useBoolean();
   const [currentEvent, setCurrentEvent] = useState(null);
+  const [productsEvent, setProductsEvent] = useState(null);
   const [itemToDelete, setItemToDelete] = useState(null);
   const [isDeleting, setIsDeleting] = useState(false);
 
@@ -129,6 +127,17 @@ export function EventListView({ readOnly = false, upcomingOnly = false }) {
     refetch();
   }, [confirm, itemToDelete, refetch]);
 
+  // New product collections go straight to adding products.
+  const handleFormSuccess = useCallback(
+    (saved, { created } = {}) => {
+      refetch();
+      if (created && saved?.type === 'product-collection') {
+        setProductsEvent(hydrateEvent(saved));
+      }
+    },
+    [refetch]
+  );
+
   const isBusy = isLoading || isFetching;
   const notFound = !isBusy && dataList.length === 0;
   const isDense = TABLE_OPTIONS.dense;
@@ -150,14 +159,12 @@ export function EventListView({ readOnly = false, upcomingOnly = false }) {
     <>
       <Box sx={{ px: { xs: 2, md: 5 }, pb: 5, pt: 3, display: 'flex', flexDirection: 'column' }}>
         <CustomBreadcrumbs
-          heading={upcomingOnly ? 'Upcoming events' : 'Events'}
-          links={[{ name: 'Dashboard', href: appPaths.root }, { name: 'Events' }]}
+          heading="Events"
+          links={[{ name: 'Dashboard', href: paths.adminDashboard.root }, { name: 'Events' }]}
           action={
-            readOnly ? null : (
-              <Button variant="contained" color="primary" startIcon={<Iconify icon="mingcute:add-line" />} onClick={handleOpenCreate}>
-                New Event
-              </Button>
-            )
+            <Button variant="contained" color="primary" startIcon={<Iconify icon="mingcute:add-line" />} onClick={handleOpenCreate}>
+              New Event
+            </Button>
           }
           sx={{ mb: { xs: 3, md: 5 } }}
         />
@@ -200,7 +207,7 @@ export function EventListView({ readOnly = false, upcomingOnly = false }) {
             )}
 
             <Scrollbar>
-              <Table size={isDense ? 'small' : 'medium'} sx={{ minWidth: 1180 }}>
+              <Table size={isDense ? 'small' : 'medium'} sx={{ minWidth: 1380 }}>
                 <TableHeadCustom headLabel={TABLE_HEAD} rowCount={dataList.length} />
 
                 <TableBody>
@@ -211,8 +218,9 @@ export function EventListView({ readOnly = false, upcomingOnly = false }) {
                         row={row}
                         serialNumber={calculateSerialNumber(currentPage, itemsPerPage, index)}
                         onViewRow={() => handleOpenView(row)}
-                        onEditRow={readOnly ? undefined : () => handleOpenEdit(row)}
-                        onDeleteRow={readOnly ? undefined : () => handleDeleteRow(row)}
+                        onEditRow={() => handleOpenEdit(row)}
+                        onManageProducts={() => setProductsEvent(row)}
+                        onDeleteRow={() => handleDeleteRow(row)}
                       />
                     ))}
 
@@ -230,9 +238,9 @@ export function EventListView({ readOnly = false, upcomingOnly = false }) {
 
       <EventViewDialog event={currentEvent} open={viewDialog.value} onClose={handleCloseView} />
 
-      {!readOnly && (
-        <EventFormDialog currentEvent={formDialog.value ? currentEvent : null} open={formDialog.value} onClose={handleCloseForm} onSuccess={refetch} />
-      )}
+      <EventFormDialog currentEvent={formDialog.value ? currentEvent : null} open={formDialog.value} onClose={handleCloseForm} onSuccess={handleFormSuccess} />
+
+      <EventProductsDialog event={productsEvent} open={!!productsEvent} onClose={() => setProductsEvent(null)} onSaved={refetch} />
 
       <ConfirmDialog
         open={confirm.value}
@@ -252,8 +260,3 @@ export function EventListView({ readOnly = false, upcomingOnly = false }) {
     </>
   );
 }
-
-EventListView.propTypes = {
-  readOnly: PropTypes.bool,
-  upcomingOnly: PropTypes.bool,
-};

@@ -22,8 +22,7 @@ const RECENT_TRANSACTIONS = [
 export function AdminTransactions({
   title,
   currentBalance,
-  orderTotal,
-  refunded,
+  rows = [],
   list = RECENT_TRANSACTIONS,
   sx,
   ...other
@@ -36,8 +35,9 @@ export function AdminTransactions({
         <Typography variant="h3">{fCurrency(currentBalance)}</Typography>
 
         <Stack spacing={1} sx={{ mt: 2 }}>
-          <Row label="Order total" value={orderTotal} />
-          <Row label="Refunded" value={refunded} />
+          {rows.map((row) => (
+            <Row key={row.label} label={row.label} value={row.value} />
+          ))}
         </Stack>
       </Box>
 

@@ -14,6 +14,8 @@ import { Label } from 'src/components/label';
 import { fCurrency, fNumber, fShortenNumber } from 'src/utils/format-number';
 import { getStatusColor } from 'src/utils/table-utils';
 
+import { getActiveProductEvents } from 'src/sections/_active/events-view/mock';
+
 import { getPrimaryImage } from './mock';
 import { ProductReviewLabel } from './product-review-label';
 import { getProductStatusLabel } from './product-table-config';
@@ -22,6 +24,7 @@ import { getDisplayPrice, getVariantCountLabel, getVariantLabel, hasMultipleVari
 export function ProductTableRow({ row, serialNumber, showCompany = true, onViewRow, onEditRow, onDeleteRow, onApproveRow, onRejectRow }) {
   const variants = row.variants || [];
   const isPending = row.reviewStatus === 'pending';
+  const activeEvents = getActiveProductEvents(row._id);
 
   const actions = [
     {
@@ -73,9 +76,20 @@ export function ProductTableRow({ row, serialNumber, showCompany = true, onViewR
       </TableCell>
 
       <TableCell>
-        <Typography variant="body2" noWrap sx={{ maxWidth: 220 }}>
-          {row.title || 'N/A'}
-        </Typography>
+        <Stack direction="row" spacing={0.75} alignItems="center">
+          <Typography variant="body2" noWrap sx={{ maxWidth: 200 }}>
+            {row.title || 'N/A'}
+          </Typography>
+          {!!activeEvents.length && (
+            <Tooltip arrow title={activeEvents.map(({ event }) => event.title).join(', ')}>
+              <Box component="span" sx={{ display: 'inline-flex', flexShrink: 0 }}>
+                <Label variant="soft" color="info">
+                  In event
+                </Label>
+              </Box>
+            </Tooltip>
+          )}
+        </Stack>
       </TableCell>
 
       <TableCell sx={{ whiteSpace: 'nowrap' }}>{row.category?.title || 'N/A'}</TableCell>

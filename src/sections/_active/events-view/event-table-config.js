@@ -11,13 +11,15 @@ export const TABLE_OPTIONS = {
 export const TABLE_HEAD = [
   { id: 'sr', label: 'Sr#', width: 64 },
   { id: 'cover', label: 'Image', width: 88 },
-  { id: 'title', label: 'Title', width: 240 },
-  { id: 'type', label: 'Type', width: 160 },
-  { id: 'placement', label: 'Placement', width: 180 },
+  { id: 'title', label: 'Title', width: 220 },
+  { id: 'type', label: 'Type', width: 150 },
+  { id: 'placement', label: 'Placement', width: 170 },
+  { id: 'discount', label: 'Discount', width: 100 },
+  { id: 'products', label: 'Products', width: 90 },
   { id: 'dateRange', label: 'Date Range', width: 180 },
-  { id: 'status', label: 'Status', width: 120 },
-  { id: 'createdAt', label: 'Created At', width: 140 },
-  { id: 'action', label: 'Action', width: 132 },
+  { id: 'status', label: 'Status', width: 110 },
+  { id: 'createdAt', label: 'Created At', width: 120 },
+  { id: 'action', label: 'Action', width: 176 },
 ];
 
 export const EVENT_STATUS_OPTIONS = [
@@ -33,12 +35,22 @@ export const EVENT_TYPE_OPTIONS = [
   { value: 'product-collection', label: 'Product Collection' },
 ];
 
+// Each placement takes one event type; the API rejects any other pairing.
 export const EVENT_PLACEMENT_OPTIONS = [
-  { value: 'home-best-deals', label: "Today's Best Deals" },
-  { value: 'home-gifts-banner', label: 'Gifts Banner' },
-  { value: 'home-discover-more', label: 'Discover More' },
-  { value: 'home-suggested', label: 'Suggested For You' },
-  { value: 'browse-banner', label: 'Browse Banner' },
+  { value: 'home-best-deals', label: "Today's Best Deals", type: 'product-collection' },
+  { value: 'home-gifts-banner', label: 'Gifts Banner', type: 'banner' },
+  { value: 'home-discover-more', label: 'Discover More', type: 'product-collection' },
+  { value: 'home-suggested', label: 'Suggested For You', type: 'product-collection' },
+  { value: 'browse-banner', label: 'Browse Banner', type: 'banner' },
+];
+
+export const getPlacementOptions = (type) => EVENT_PLACEMENT_OPTIONS.filter((option) => option.type === type);
+
+export const isPlacementForType = (placement, type) => EVENT_PLACEMENT_OPTIONS.some((option) => option.value === placement && option.type === type);
+
+export const EVENT_STORE_SCOPE_OPTIONS = [
+  { value: 'all', label: 'All stores' },
+  { value: 'selected', label: 'Selected stores' },
 ];
 
 export const EVENT_PUBLISH_OPTIONS = [

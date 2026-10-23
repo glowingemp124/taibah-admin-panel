@@ -1,4 +1,5 @@
-import { useMemo, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
+import { useSearchParams } from 'react-router-dom';
 
 import Box from '@mui/material/Box';
 import Button from '@mui/material/Button';
@@ -25,6 +26,7 @@ import { fDate, formatStr } from 'src/utils/format-time';
 
 import { getSellerApplications, reviewSellerApplication } from './mock';
 import { PendingSellerViewDialog } from './pending-seller-view-dialog';
+import { isApprovedStatus } from 'src/utils/seller-status';
 
 const TABLE_HEAD = [
   { id: 'sr', label: 'Sr#', width: 64 },
@@ -52,7 +54,7 @@ const TOOLBAR_FILTER_FIELDS = [
 ];
 
 function verificationColor(status) {
-  if (status === 'verified') return 'success';
+  if (isApprovedStatus(status)) return 'success';
   if (status === 'rejected') return 'error';
   return 'warning';
 }
@@ -67,6 +69,24 @@ export function PendingSellerListView() {
   const rowsPerPage = 10;
 
   const applications = useMemo(() => getSellerApplications(), [revision]);
+
+  // ?review=<applicant user ID> (from a seller_application notification) opens that review, then clears the URL.
+  const [searchParams, setSearchParams] = useSearchParams();
+  const reviewId = searchParams.get('review');
+
+  useEffect(() => {
+    if (!reviewId) return;
+    const application = applications.find((row) => row.userId === reviewId);
+    if (application) {
+      setStatus(application.verificationStatus || 'pending');
+      setSelected(application);
+    }
+
+    const next = new URLSearchParams(searchParams);
+    next.delete('review');
+    setSearchParams(next, { replace: true });
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [reviewId]);
 
   const counts = useMemo(
     () =>

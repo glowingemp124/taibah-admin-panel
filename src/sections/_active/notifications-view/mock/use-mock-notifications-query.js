@@ -1,20 +1,21 @@
-import { useMemo } from 'react';
+import { useMemo, useState } from 'react';
 
 import { MOCK_NOTIFICATIONS } from './notifications';
 
 // ----------------------------------------------------------------------
 
+const STATUSES = ['draft', 'scheduled', 'sending', 'sent', 'failed'];
+
 export function useGetMockNotificationsQuery(params = {}) {
   const { search = '', page = 0, status = '', limit = 10, startDate, endDate } = params;
+  const [revision, setRevision] = useState(0);
 
   return useMemo(() => {
-    let rows = [...MOCK_NOTIFICATIONS];
+    let rows = MOCK_NOTIFICATIONS.map((row) => ({ ...row, stats: { ...row.stats } })).sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt));
 
     if (search) {
       const query = search.toLowerCase();
-      rows = rows.filter(
-        (row) => row.title.toLowerCase().includes(query) || row.message.toLowerCase().includes(query)
-      );
+      rows = rows.filter((row) => row.title.toLowerCase().includes(query) || row.message.toLowerCase().includes(query));
     }
 
     if (startDate) {
@@ -28,12 +29,10 @@ export function useGetMockNotificationsQuery(params = {}) {
       rows = rows.filter((row) => new Date(row.createdAt) <= to);
     }
 
-    const counts = rows.reduce((acc, row) => {
-      acc[row.status] = (acc[row.status] || 0) + 1;
-      return acc;
-    }, {});
+    // meta.counts has every status, so the tabs don't jump when one is empty.
+    const counts = STATUSES.reduce((acc, key) => ({ ...acc, [key]: rows.filter((row) => row.status === key).length }), {});
 
-    if (status) {
+    if (status && status !== 'all') {
       rows = rows.filter((row) => row.status === status);
     }
 
@@ -52,7 +51,7 @@ export function useGetMockNotificationsQuery(params = {}) {
       isLoading: false,
       isFetching: false,
       error: undefined,
-      refetch: () => {},
+      refetch: () => setRevision((value) => value + 1),
     };
-  }, [search, page, status, limit, startDate, endDate]);
+  }, [search, page, status, limit, startDate, endDate, revision]);
 }

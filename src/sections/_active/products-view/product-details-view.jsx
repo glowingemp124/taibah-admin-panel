@@ -33,6 +33,7 @@ import { getStatusColor } from 'src/utils/table-utils';
 
 import { useAppRole } from 'src/hooks/use-app-role';
 
+import { eventPrice, getProductEvents } from 'src/sections/_active/events-view/mock';
 import { ColorSwatch, OptionValueLabel } from 'src/sections/_active/options-view';
 
 import { findMockProduct, getProductStore } from './mock';
@@ -156,7 +157,10 @@ export function ProductDetailsView() {
   const review = useProductReview(reload);
 
   const variants = useMemo(() => product?.variants || [], [product]);
-  const attributes = useMemo(() => getProductAttributes(variants), [variants]);
+  const attributes = useMemo(
+    () => (Array.isArray(product?.optionGroups) ? product.optionGroups.map((group) => ({ ...group.attribute, values: group.values })) : getProductAttributes(variants)),
+    [product, variants]
+  );
 
   const selectedVariant = useMemo(
     () => variants.find((variant) => attributes.every((attribute) => toOptionMap(variant)[attribute._id] === selected[attribute._id])) || variants[0] || null,
@@ -228,6 +232,7 @@ export function ProductDetailsView() {
 
   const productRating = Math.round(product.rating || 0);
   const canReview = !isSeller && (product.reviewStatus === 'pending' || product.reviewStatus === 'rejected');
+  const productEvents = getProductEvents(product._id);
   const variantOnSale = product.onSale && selectedVariant?.salePrice != null;
 
   return (
@@ -429,6 +434,31 @@ export function ProductDetailsView() {
                     <Typography variant="caption" sx={{ color: 'error.main' }}>
                       {product.reviewReason}
                     </Typography>
+                  )}
+                </Stack>
+
+                <Stack spacing={0.25} sx={{ gridColumn: '1 / -1' }}>
+                  <Typography variant="caption" sx={{ color: 'text.disabled' }}>
+                    Events
+                  </Typography>
+                  {productEvents.length ? (
+                    productEvents.map(({ event, runtimeStatus }) => {
+                      const pricing = eventPrice(product, event);
+                      return (
+                        <Stack key={event._id} direction="row" spacing={1} alignItems="center" flexWrap="wrap" useFlexGap>
+                          <Typography variant="subtitle2">{event.title}</Typography>
+                          <Label variant="soft" color={getStatusColor(runtimeStatus)}>
+                            {runtimeStatus === 'active' ? 'Active' : 'Upcoming'}
+                          </Label>
+                          <Typography variant="body2" sx={{ color: 'text.secondary' }}>
+                            {fDay(event.startAt)} – {fDay(event.endAt)} · {fCurrency(pricing.price)}
+                            {pricing.percent > 0 && ` (${pricing.percent}% ${pricing.source === 'event' ? 'event' : 'own'} discount)`}
+                          </Typography>
+                        </Stack>
+                      );
+                    })
+                  ) : (
+                    <Typography variant="subtitle2">Not in any current or upcoming event</Typography>
                   )}
                 </Stack>
               </Box>

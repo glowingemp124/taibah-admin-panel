@@ -5,8 +5,11 @@ import Avatar from '@mui/material/Avatar';
 import Box from '@mui/material/Box';
 import Button from '@mui/material/Button';
 import Card from '@mui/material/Card';
+import FormControlLabel from '@mui/material/FormControlLabel';
 import ListItemText from '@mui/material/ListItemText';
 import Stack from '@mui/material/Stack';
+import Switch from '@mui/material/Switch';
+import Tooltip from '@mui/material/Tooltip';
 import Tab from '@mui/material/Tab';
 import Tabs from '@mui/material/Tabs';
 
@@ -17,22 +20,27 @@ import { CustomBreadcrumbs } from 'src/components/custom-breadcrumbs';
 import { EmptyContent } from 'src/components/empty-content';
 import { Iconify } from 'src/components/iconify';
 import { Label } from 'src/components/label';
+import { toast } from 'src/components/snackbar';
 import { useTabs } from 'src/hooks/use-tabs';
 import { varAlpha } from 'src/theme/styles';
 import { OrderListView } from 'src/sections/_active/orders-view';
 import { ProductListView } from 'src/sections/_active/products-view';
 import { MOCK_COMPANIES } from 'src/sections/_active/products-view/mock';
+import { ReviewListView } from 'src/sections/_active/reviews-view';
 import { TransactionListView } from 'src/sections/_active/transactions-view';
 import { MOCK_USERS } from 'src/sections/_active/users-view/mock';
 
 import { resolveSellerProfile } from './resolve-seller-profile';
+import { isSellerApproved, updateSellerFeatured } from './seller-featured';
 import { SellerEditDialog } from './seller-edit-dialog';
 import { SellerProfileOverview } from './seller-profile-overview';
+import { isApprovedStatus } from 'src/utils/seller-status';
 
 const TABS = [
   { value: 'profile', label: 'Profile', icon: <Iconify icon="solar:user-id-bold" width={24} /> },
   { value: 'products', label: 'Products', icon: <Iconify icon="solar:box-bold" width={24} /> },
   { value: 'orders', label: 'Orders', icon: <Iconify icon="solar:bag-bold" width={24} /> },
+  { value: 'reviews', label: 'Reviews', icon: <Iconify icon="solar:star-bold" width={24} /> },
   {
     value: 'transactions',
     label: 'Transactions',
@@ -41,7 +49,7 @@ const TABS = [
 ];
 
 function verificationColor(status) {
-  if (status === 'verified') return 'success';
+  if (isApprovedStatus(status)) return 'success';
   if (status === 'rejected') return 'error';
   return 'warning';
 }
@@ -60,12 +68,31 @@ export function SellerDetailsView() {
     )
   );
 
+  const [savingFeatured, setSavingFeatured] = useState(false);
+
   const loadSeller = useCallback(() => {
     const nextUser = MOCK_USERS.find((row) => row._id === id) || null;
     const nextCompany = MOCK_COMPANIES.find((row) => row.seller?._id === id);
     setUser(nextUser);
     setProfile(resolveSellerProfile(nextUser, nextCompany));
   }, [id]);
+
+  const featured = !!profile?.featured;
+  const canFeature = isSellerApproved(profile);
+
+  const handleFeaturedChange = async (event) => {
+    const next = event.target.checked;
+    setSavingFeatured(true);
+    try {
+      await updateSellerFeatured(id, profile, next);
+      setProfile((current) => ({ ...current, featured: next }));
+      toast.success(next ? 'Store is now featured' : 'Store is no longer featured');
+    } catch (error) {
+      toast.error(error.status === 409 ? 'Approve the seller first' : 'Failed to update featured');
+    } finally {
+      setSavingFeatured(false);
+    }
+  };
 
   useEffect(() => {
     loadSeller();
@@ -173,17 +200,34 @@ export function SellerDetailsView() {
                 <Label variant="soft" color={verificationColor(profile?.verificationStatus)}>
                   {profile?.verificationStatus || 'pending'}
                 </Label>
+                {featured && (
+                  <Label variant="soft" color="warning" startIcon={<Iconify icon="solar:star-bold" width={14} />}>
+                    Featured
+                  </Label>
+                )}
               </Stack>
             </Stack>
 
-            <Button
-              variant="contained"
-              color="primary"
-              startIcon={<Iconify icon="solar:pen-bold" />}
-              onClick={() => setEditOpen(true)}
-            >
-              Edit details
-            </Button>
+            <Stack direction="row" spacing={2} alignItems="center">
+              <Tooltip title={canFeature ? '' : 'Approve the seller first'}>
+                <span>
+                  <FormControlLabel
+                    label="Featured"
+                    disabled={!canFeature || savingFeatured}
+                    control={<Switch checked={featured} onChange={handleFeaturedChange} />}
+                    sx={{ mr: 0 }}
+                  />
+                </span>
+              </Tooltip>
+              <Button
+                variant="contained"
+                color="primary"
+                startIcon={<Iconify icon="solar:pen-bold" />}
+                onClick={() => setEditOpen(true)}
+              >
+                Edit details
+              </Button>
+            </Stack>
           </Stack>
 
           <Box
@@ -207,7 +251,9 @@ export function SellerDetailsView() {
 
         {tabs.value === 'products' && <ProductListView embedded sellerId={user._id} />}
 
-        {tabs.value === 'orders' && <OrderListView embedded userId={user._id} orderScope="vendor" />}
+        {tabs.value === 'orders' && <OrderListView embedded sellerId={user._id} />}
+
+        {tabs.value === 'reviews' && <ReviewListView embedded sellerId={user._id} sellerMode={false} />}
 
         {tabs.value === 'transactions' && <TransactionListView embedded sellerId={user._id} />}
       </Box>

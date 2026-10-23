@@ -151,7 +151,7 @@ export function UserDetailsView({ variant = 'all' }) {
                   <Tab value="transactions" label="Transactions" />
                 </Tabs>
 
-                {buyerTabs.value === 'orders' && <OrderListView embedded userId={user._id} orderScope="customer" />}
+                {buyerTabs.value === 'orders' && <OrderListView embedded userId={user._id} />}
                 {buyerTabs.value === 'transactions' && <TransactionListView embedded userId={user._id} />}
               </Box>
             )}
@@ -164,7 +164,7 @@ export function UserDetailsView({ variant = 'all' }) {
                 </Tabs>
 
                 {sellerTabs.value === 'products' && <ProductListView embedded sellerId={user._id} />}
-                {sellerTabs.value === 'orders' && <OrderListView embedded userId={user._id} orderScope="vendor" />}
+                {sellerTabs.value === 'orders' && <OrderListView embedded sellerId={user._id} />}
               </Box>
             )}
           </Card>

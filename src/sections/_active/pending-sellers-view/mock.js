@@ -1,4 +1,6 @@
+import { unfeatureUnlessApproved } from 'src/sections/_active/sellers-view/seller-featured';
 import { getSellerProfiles, saveSellerProfile } from 'src/sections/auth/jwt/seller-signup/storage';
+import { isApprovedStatus } from 'src/utils/seller-status';
 
 export const MOCK_PENDING_SELLERS = [
   {
@@ -111,10 +113,12 @@ export function getSellerApplications() {
 }
 
 export function reviewSellerApplication(application, verificationStatus) {
+  unfeatureUnlessApproved({ sellerId: application.userId, email: application.email }, verificationStatus);
+
   return saveSellerProfile({
     ...application,
     verificationStatus,
-    status: verificationStatus === 'verified' ? 'active' : 'inactive',
+    status: isApprovedStatus(verificationStatus) ? 'active' : 'inactive',
     updatedAt: new Date().toISOString(),
   });
 }

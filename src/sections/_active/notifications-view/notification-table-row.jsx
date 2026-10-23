@@ -3,48 +3,24 @@ import PropTypes from 'prop-types';
 import TableCell from '@mui/material/TableCell';
 import TableRow from '@mui/material/TableRow';
 
-// import { ExpandableText } from 'src/components/expandable-text';
 import { GenericTableRowActions } from 'src/components/generic-table/table-row-actions';
 import { Label } from 'src/components/label';
 import { fDate, formatStr } from 'src/utils/format-time';
-import { getStatusColor } from 'src/utils/table-utils';
 
-import { CHANNEL_OPTIONS, RECIPIENT_OPTIONS, TYPE_OPTIONS, USER_GROUP_OPTIONS } from './notification-table-config';
+import { isBroadcastEditable } from './mock';
+import { CHANNEL_OPTIONS, getBroadcastStatus, getRecipientLabel, labelFrom, TYPE_OPTIONS } from './notification-table-config';
 
-const labelFrom = (options, value) => options.find((option) => option.value === value)?.label || value || 'N/A';
-
-export function NotificationTableRow({ row, serialNumber, onResendRow, onEditRow, onDeleteRow }) {
-  const recipientLabel =
-    row.recipient === 'group'
-      ? labelFrom(USER_GROUP_OPTIONS, row.userGroup)
-      : row.recipient === 'user'
-        ? row.userQuery || 'Specific User'
-        : labelFrom(RECIPIENT_OPTIONS, row.recipient);
+export function NotificationTableRow({ row, serialNumber, onViewRow, onSendRow, onEditRow, onDeleteRow }) {
+  const status = getBroadcastStatus(row.status);
+  // Sending and sent broadcasts can only be viewed.
+  const editable = isBroadcastEditable(row);
 
   const actions = [
-    {
-      key: 'resend',
-      icon: 'solar:restart-bold',
-      tooltip: 'Resend',
-      onClick: onResendRow,
-      hidden: !onResendRow,
-    },
-    {
-      key: 'edit',
-      icon: 'solar:pen-bold',
-      tooltip: 'Edit',
-      onClick: onEditRow,
-      hidden: !onEditRow,
-    },
-    {
-      key: 'delete',
-      icon: 'solar:trash-bin-trash-bold',
-      tooltip: 'Delete',
-      color: 'primary',
-      onClick: onDeleteRow,
-      hidden: !onDeleteRow,
-    },
-  ];
+    { key: 'view', icon: 'solar:eye-bold', tooltip: 'View', onClick: onViewRow, hidden: !onViewRow },
+    { key: 'send', icon: 'solar:plain-bold', tooltip: 'Send now', color: 'success', onClick: onSendRow, hidden: !onSendRow || !editable },
+    { key: 'edit', icon: 'solar:pen-bold', tooltip: 'Edit', onClick: onEditRow, hidden: !onEditRow || !editable },
+    { key: 'delete', icon: 'solar:trash-bin-trash-bold', tooltip: 'Delete', color: 'primary', onClick: onDeleteRow, hidden: !onDeleteRow || !editable },
+  ].filter((action) => !action.hidden);
 
   return (
     <TableRow hover tabIndex={-1}>
@@ -52,19 +28,15 @@ export function NotificationTableRow({ row, serialNumber, onResendRow, onEditRow
 
       <TableCell sx={{ whiteSpace: 'nowrap' }}>{row.title || 'N/A'}</TableCell>
 
-      {/* <TableCell sx={{ maxWidth: 280 }}>
-        <ExpandableText content={row.message} maxLength={80} title={row.title || 'Message'} />
-      </TableCell> */}
-
       <TableCell sx={{ whiteSpace: 'nowrap' }}>{labelFrom(TYPE_OPTIONS, row.type)}</TableCell>
 
-      <TableCell sx={{ whiteSpace: 'nowrap' }}>{recipientLabel}</TableCell>
+      <TableCell sx={{ whiteSpace: 'nowrap' }}>{getRecipientLabel(row)}</TableCell>
 
       <TableCell sx={{ whiteSpace: 'nowrap' }}>{labelFrom(CHANNEL_OPTIONS, row.channel)}</TableCell>
 
       <TableCell>
-        <Label variant="soft" color={getStatusColor(row.status)}>
-          {row.status || 'N/A'}
+        <Label variant="soft" color={status.color}>
+          {status.label}
         </Label>
       </TableCell>
 
@@ -82,7 +54,8 @@ export function NotificationTableRow({ row, serialNumber, onResendRow, onEditRow
 NotificationTableRow.propTypes = {
   row: PropTypes.object.isRequired,
   serialNumber: PropTypes.number.isRequired,
-  onResendRow: PropTypes.func,
+  onViewRow: PropTypes.func,
+  onSendRow: PropTypes.func,
   onEditRow: PropTypes.func,
   onDeleteRow: PropTypes.func,
 };

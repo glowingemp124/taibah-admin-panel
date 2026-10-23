@@ -12,17 +12,19 @@ import { fNumber } from 'src/utils/format-number';
 import { fDate, formatStr } from 'src/utils/format-time';
 import { getStatusColor } from 'src/utils/table-utils';
 
+import { toCustomerCard } from './customer-card-fields';
 import { USER_TYPE_OPTIONS } from './user-table-config';
 
-export function UserProfileCard({ user, onEditStatus }) {
+export function UserProfileCard({ user: rawUser, onEditStatus }) {
+  const user = toCustomerCard(rawUser);
   if (!user) return null;
 
-  const isSeller = (user.roles || []).includes('seller');
+  const isSeller = user.userType.includes('seller');
 
   return (
     <Card sx={{ p: 3 }}>
       <Stack direction={{ xs: 'column', sm: 'row' }} spacing={3} alignItems={{ sm: 'center' }}>
-        <Avatar alt={user.name} src={user.avatarUrl} sx={{ width: 80, height: 80, fontSize: 28 }} />
+        <Avatar alt={user.name} src={user.profileIcon} sx={{ width: 80, height: 80, fontSize: 28 }} />
 
         <Stack spacing={1} sx={{ flex: 1, minWidth: 0 }}>
           <Stack direction="row" spacing={1} alignItems="center" flexWrap="wrap" useFlexGap>
@@ -36,26 +38,34 @@ export function UserProfileCard({ user, onEditStatus }) {
             {user.email || 'N/A'}
           </Typography>
           <Typography variant="body2" sx={{ color: 'text.secondary' }}>
-            {user.phone || 'N/A'}
+            {user.phoneNumber || 'N/A'}
           </Typography>
 
           <Stack direction="row" spacing={0.75} flexWrap="wrap" useFlexGap>
-            {USER_TYPE_OPTIONS.filter((option) => (user.roles || []).includes(option.value)).map((option) => (
+            {USER_TYPE_OPTIONS.filter((option) => user.userType.includes(option.value)).map((option) => (
               <Label key={option.value} variant="soft" color={option.color}>
                 {option.label}
               </Label>
             ))}
           </Stack>
 
-          {isSeller && (
-            <Stack direction="row" spacing={0.75} alignItems="center" sx={{ color: 'text.secondary' }}>
+          <Stack direction="row" spacing={2} sx={{ color: 'text.secondary' }}>
+            <Stack direction="row" spacing={0.75} alignItems="center">
               <Iconify icon="solar:heart-bold" width={18} />
-              <Typography variant="body2">{fNumber(user.favoriteCount ?? 0)} favorites</Typography>
+              <Typography variant="body2">
+                {fNumber(user.favoriteCount)} {isSeller ? 'favorites' : 'favourite products'}
+              </Typography>
             </Stack>
-          )}
+            {!isSeller && (
+              <Stack direction="row" spacing={0.75} alignItems="center">
+                <Iconify icon="solar:shop-bold" width={18} />
+                <Typography variant="body2">{fNumber(user.favoriteStoreCount)} favourite stores</Typography>
+              </Stack>
+            )}
+          </Stack>
 
           <Typography variant="caption" sx={{ color: 'text.disabled' }}>
-            Joined {user.createdAt ? fDate(user.createdAt, formatStr.paramCase.date) : 'N/A'}
+            Joined {user.joinedAt ? fDate(user.joinedAt, formatStr.paramCase.date) : 'N/A'}
           </Typography>
         </Stack>
 

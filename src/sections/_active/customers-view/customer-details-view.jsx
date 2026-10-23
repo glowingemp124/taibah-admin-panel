@@ -21,10 +21,12 @@ import { Label } from 'src/components/label';
 import { useTabs } from 'src/hooks/use-tabs';
 import { varAlpha } from 'src/theme/styles';
 import { OrderListView } from 'src/sections/_active/orders-view';
-import { TransactionListView } from 'src/sections/_active/transactions-view';
+import { toCustomerCard } from 'src/sections/_active/users-view/customer-card-fields';
 import { MOCK_USERS } from 'src/sections/_active/users-view/mock';
 import { UserStatusDialog } from 'src/sections/_active/users-view/user-status-dialog';
 import { getStatusColor } from 'src/utils/table-utils';
+import { fDate, formatStr } from 'src/utils/format-time';
+import { fNumber } from 'src/utils/format-number';
 
 const TABS = [
   { value: 'orders', label: 'Orders', icon: <Iconify icon="solar:bag-bold" width={24} /> },
@@ -40,6 +42,7 @@ export function CustomerDetailsView() {
   const tabs = useTabs('orders');
   const [statusOpen, setStatusOpen] = useState(false);
   const [user, setUser] = useState(() => MOCK_USERS.find((row) => row._id === id) || null);
+  const card = toCustomerCard(user);
 
   const loadCustomer = useCallback(() => {
     setUser(MOCK_USERS.find((row) => row._id === id) || null);
@@ -118,7 +121,7 @@ export function CustomerDetailsView() {
           >
             <Avatar
               alt={user.name}
-              src={user.avatarUrl}
+              src={card.profileIcon}
               sx={{
                 width: { xs: 80, md: 112 },
                 height: { xs: 80, md: 112 },
@@ -146,11 +149,23 @@ export function CustomerDetailsView() {
                 sx={{ my: 0 }}
               />
 
-              {user.phone && (
+              {card.phoneNumber && (
                 <Typography variant="body2" sx={{ color: 'text.secondary' }}>
-                  {user.phone}
+                  {card.phoneNumber}
                 </Typography>
               )}
+
+              <Stack direction="row" spacing={2} sx={{ color: 'text.secondary', typography: 'body2' }}>
+                <Stack direction="row" spacing={0.5} alignItems="center">
+                  <Iconify icon="solar:heart-bold" width={16} />
+                  <span>{fNumber(card.favoriteCount)} favourite products</span>
+                </Stack>
+                <Stack direction="row" spacing={0.5} alignItems="center">
+                  <Iconify icon="solar:shop-bold" width={16} />
+                  <span>{fNumber(card.favoriteStoreCount)} favourite stores</span>
+                </Stack>
+                {card.joinedAt && <span>Joined {fDate(card.joinedAt, formatStr.paramCase.date)}</span>}
+              </Stack>
 
               <Stack direction="row" spacing={1} flexWrap="wrap" useFlexGap justifyContent={{ xs: 'center', md: 'flex-start' }}>
                 <Label variant="soft" color={getStatusColor(user.status)}>
@@ -186,9 +201,11 @@ export function CustomerDetailsView() {
           </Box>
         </Card>
 
-        {tabs.value === 'orders' && <OrderListView embedded userId={user._id} orderScope="customer" />}
+        {tabs.value === 'orders' && <OrderListView embedded userId={user._id} />}
 
-        {tabs.value === 'transactions' && <TransactionListView embedded userId={user._id} />}
+        {tabs.value === 'transactions' && (
+          <EmptyContent filled title="Transactions are coming soon" description="Payments aren't connected yet, so there are no transactions to show." sx={{ py: 10 }} />
+        )}
       </Box>
 
       <UserStatusDialog

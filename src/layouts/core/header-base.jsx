@@ -143,10 +143,8 @@ export function HeaderBase({
               {/* -- Language popover -- */}
               {/* {localization && <LanguagePopover data-slot="localization" data={data?.langs} />} */}
 
-              {/* -- Notifications popover -- */}
-              {/* {notifications && (
-                <NotificationsDrawer data-slot="notifications" data={data?.notifications} />
-              )} */}
+              {/* -- Notifications drawer (reads its own admin/seller notifications) -- */}
+              {notifications && <NotificationsDrawer data-slot="notifications" />}
 
               {/* -- Contacts popover -- */}
               {/* {contacts && <ContactsPopover data-slot="contacts" data={data?.contacts} />} */}

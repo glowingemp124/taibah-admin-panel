@@ -18,7 +18,7 @@ export default function Page() {
   const { sellerId } = useAppRole();
 
   const userIds = useMemo(() => {
-    const ids = MOCK_ORDERS.filter((row) => (row.items || []).some((item) => item.vendor?.seller?._id === sellerId))
+    const ids = MOCK_ORDERS.filter((row) => row.stores.some((store) => store.sellerId === sellerId))
       .map((row) => row.customer?._id)
       .filter(isStoreClient);
     return [...new Set(ids)];

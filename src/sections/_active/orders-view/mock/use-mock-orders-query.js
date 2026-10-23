@@ -1,57 +1,37 @@
 import { useMemo, useState } from 'react';
 
-import { getOrderVendors, MOCK_ORDERS } from './orders';
+import { MOCK_ORDERS, toSellerOrder } from './orders';
 
 // ----------------------------------------------------------------------
 
+const ORDER_STATUSES = ['pending', 'processing', 'on-the-way', 'delivered', 'cancelled'];
+
+
 export function useGetMockOrdersQuery(params = {}) {
-  const { search = '', page = 0, status = '', limit = 10, paymentMethod = '', startDate, endDate, userId, orderScope = 'customer' } = params;
+  const { search = '', page = 0, status = '', limit = 10, startDate, endDate, userId, sellerId } = params;
   const [revision, setRevision] = useState(0);
 
   return useMemo(() => {
-    let rows = MOCK_ORDERS.map((row) => ({
-      ...row,
-      items: (row.items || []).map((item) => ({
-        ...item,
-        vendor: item.vendor
-          ? {
-              ...item.vendor,
-              seller: item.vendor.seller ? { ...item.vendor.seller } : null,
-            }
-          : null,
-      })),
-      customer: row.customer ? { ...row.customer } : null,
-      address: row.address ? { ...row.address } : null,
-      timeline: (row.timeline || []).map((step) => ({ ...step })),
-    }));
+    let rows = sellerId ? MOCK_ORDERS.map((row) => toSellerOrder(row, sellerId)).filter(Boolean) : [...MOCK_ORDERS];
 
     if (userId) {
-      rows =
-        orderScope === 'vendor'
-          ? rows.filter((row) => getOrderVendors(row).some((vendor) => vendor.seller?._id === userId))
-          : rows.filter((row) => row.customer?._id === userId);
+      rows = rows.filter((row) => row.customer?._id === userId);
     }
 
     if (search) {
       const query = search.toLowerCase();
       rows = rows.filter(
         (row) =>
-          row.orderId.toLowerCase().includes(query) ||
+          row.code.toLowerCase().includes(query) ||
           row.customer?.name?.toLowerCase().includes(query) ||
           row.customer?.email?.toLowerCase().includes(query) ||
-          row.note?.toLowerCase().includes(query) ||
-          (row.items || []).some(
-            (item) =>
-              item.title.toLowerCase().includes(query) ||
-              item.vendor?.name?.toLowerCase().includes(query) ||
-              item.vendor?.seller?.name?.toLowerCase().includes(query) ||
-              item.vendor?.seller?.email?.toLowerCase().includes(query)
+          row.stores.some(
+            (store) =>
+              store.code.toLowerCase().includes(query) ||
+              store.name.toLowerCase().includes(query) ||
+              store.items.some((line) => line.title.toLowerCase().includes(query) || line.sku?.toLowerCase().includes(query))
           )
       );
-    }
-
-    if (paymentMethod && paymentMethod !== 'all') {
-      rows = rows.filter((row) => row.paymentMethod === paymentMethod);
     }
 
     if (startDate) {
@@ -65,14 +45,13 @@ export function useGetMockOrdersQuery(params = {}) {
       rows = rows.filter((row) => new Date(row.createdAt) <= to);
     }
 
-    const counts = rows.reduce((acc, row) => {
-      acc[row.status] = (acc[row.status] || 0) + 1;
-      return acc;
-    }, {});
+    const counts = ORDER_STATUSES.reduce((acc, key) => ({ ...acc, [key]: rows.filter((row) => row.status === key).length }), {});
 
     if (status && status !== 'all') {
       rows = rows.filter((row) => row.status === status);
     }
+
+    rows.sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt));
 
     const start = page * limit;
     const pagedRows = rows.slice(start, start + limit);
@@ -91,5 +70,5 @@ export function useGetMockOrdersQuery(params = {}) {
       error: undefined,
       refetch: () => setRevision((value) => value + 1),
     };
-  }, [search, page, status, limit, paymentMethod, startDate, endDate, userId, orderScope, revision]);
+  }, [search, page, status, limit, startDate, endDate, userId, sellerId, revision]);
 }
